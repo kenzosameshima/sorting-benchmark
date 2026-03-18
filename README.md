@@ -1,21 +1,102 @@
-# sorting-benchmark
-This project is a Supervised Practical Assignment (SPA) for the Data Structures course at UNIP. It implements a program that takes input data previously established by the instructor, stores the numbers in an array, and then copies and sorts them using multiple sorting algorithms in order to compare their efficiency. The main implementation is in C, with a small portion in Python used for selecting the input file and invoking the main.exe.
+# Sorting Benchmark (C)
 
-# Running the Code
-To run the program, begin by compiling the source code. The following instructions assume you are using GCC on a Windows system (e.g., via MinGW or WSL).
+Benchmark project for comparing sorting algorithms using execution time and operation
+counters (comparisons and movements).
 
-Use the command below to compile the project:
+## Features
 
-```bash
-gcc -I./include -o main main.c utils/utils.c sort/quick.c sort/selection.c sort/insertion.c sort/cocktail.c sort/heap.c sort/merge.c benchmark/benchmark.c
-```
-This will generate an executable file named main.
+- Algorithms included: bubble, selection, insertion, quick, merge, heap.
+- Multiple input sizes: 1000, 10000, 100000.
+- Repeated runs per size to compute averages.
+- CSV output for later analysis.
+- Strict compilation flags with warnings treated as errors.
 
+## Project Structure
 
-After compilation, run the Python script to execute the program:
+- src/: entry point and utilities
+- sorting/: sorting algorithms
+- data/: input data generation
+- metrics/: metric reset and counters support
+- experiments/: benchmark orchestration
+- include/: shared headers
+- results/: generated CSV output
 
-```bash
-python main.py
-```
+## Build Requirements
 
-The script will prompt you to select an input file, which contains the numerical data that will be used to generate arrays for sorting. You will then be able to choose from a set of options to execute and benchmark the various sorting algorithms.
+- GCC with C11 support
+- make or mingw32-make
+
+## Build and Run
+
+Default build:
+
+- Linux/macOS: make
+- Windows (MinGW): mingw32-make
+
+Run benchmark:
+
+- Linux/macOS: make run
+- Windows (MinGW): mingw32-make run
+
+Clean artifacts:
+
+- Linux/macOS: make clean
+- Windows (MinGW): mingw32-make clean
+
+Rebuild from scratch:
+
+- Linux/macOS: make rebuild
+- Windows (MinGW): mingw32-make rebuild
+
+Debug build:
+
+- Linux/macOS: make DEBUG=1
+- Windows (MinGW): mingw32-make DEBUG=1
+
+Show make targets:
+
+- Linux/macOS: make help
+- Windows (MinGW): mingw32-make help
+
+## Compilation Policy
+
+The Makefile uses strict flags, including:
+
+- -std=c11
+- -Wall -Wextra -Wpedantic
+- -Wconversion -Wsign-conversion -Wshadow
+- -Wformat=2 -Wcast-align -Wmissing-declarations
+- -Wstrict-overflow=5 -Wundef
+- -Werror
+
+## Benchmark Output
+
+The benchmark generates:
+
+- results/results.csv
+
+CSV header:
+
+- algorithm,size,repetitions,average_time,average_comparisons,average_movements
+
+Notes:
+
+- When an expensive run is intentionally skipped, repetitions is 0 and metric
+  fields are written as NA.
+- Quadratic algorithms are skipped for very large inputs when above the
+  configured threshold.
+
+## Algorithms Evaluated
+
+- bubble
+- selection
+- insertion
+- quick (wrapper)
+- merge (wrapper with auxiliary allocation)
+- heap
+
+## Contributing
+
+1. Follow the style guide in C_STYLE_GUIDE.md.
+2. Keep functions focused and modular.
+3. Preserve strict-flag compatibility (no warnings).
