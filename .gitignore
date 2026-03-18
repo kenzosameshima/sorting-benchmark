@@ -1,0 +1,27 @@
+# Binaries
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+
+# Object and static/shared library files
+*.o
+*.obj
+*.a
+*.lib
+
+# Build directories and temporary outputs
+build/
+dist/
+*.log
+
+# Editor/OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project-specific generated outputs
+results/*.csv
