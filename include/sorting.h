@@ -13,8 +13,8 @@ typedef struct {
 void bubble_sort(Image arr[], int n, Metrics *metrics);
 void selection_sort(Image arr[], int n, Metrics *metrics);
 void insertion_sort(Image arr[], int n, Metrics *metrics);
-void quick_sort(Image arr[], int low, int high, Metrics *metrics);
-void merge_sort(Image arr[], int left, int right, Image arr_copy[], Metrics *metrics);
+void quick_sort(Image arr[], int n, Metrics *metrics);
+void merge_sort(Image arr[], int n, Metrics *metrics);
 void heap_sort(Image arr[], int n, Metrics *metrics);
 
 #endif

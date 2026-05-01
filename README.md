@@ -10,6 +10,7 @@ counters (comparisons and movements).
 - Repeated runs per size to compute averages.
 - CSV output for later analysis.
 - Strict compilation flags with warnings treated as errors.
+- Reproducible datasets using an explicit benchmark seed.
 
 ## Project Structure
 
@@ -23,7 +24,7 @@ counters (comparisons and movements).
 
 ## Build Requirements
 
-- GCC with C11 support
+- GCC with C17 support
 - make or mingw32-make
 
 ## Build and Run
@@ -53,6 +54,16 @@ Debug build:
 - Linux/macOS: make DEBUG=1
 - Windows (MinGW): mingw32-make DEBUG=1
 
+Sanitizer test build:
+
+- Linux/macOS: make asan-test
+- Windows (MinGW): set ASAN_OPTIONS=detect_leaks=0 && mingw32-make SANITIZE=1 test
+
+Reproducible benchmark run:
+
+- Linux/macOS: make run ARGS="--seed 12345"
+- Windows (MinGW): benchmark.exe --seed 12345
+
 Show make targets:
 
 - Linux/macOS: make help
@@ -62,7 +73,7 @@ Show make targets:
 
 The Makefile uses strict flags, including:
 
-- -std=c11
+- -std=c17
 - -Wall -Wextra -Wpedantic
 - -Wconversion -Wsign-conversion -Wshadow
 - -Wformat=2 -Wcast-align -Wmissing-declarations
@@ -77,7 +88,7 @@ The benchmark generates:
 
 CSV header:
 
-- algorithm,size,repetitions,average_time,average_comparisons,average_movements
+- algorithm,size,seed,repetitions,time_median,time_stddev,time_min,time_max,average_comparisons,average_swaps,average_movements
 
 Notes:
 
@@ -91,8 +102,8 @@ Notes:
 - bubble
 - selection
 - insertion
-- quick (wrapper)
-- merge (wrapper with auxiliary allocation)
+- quick
+- merge
 - heap
 
 ## Contributing

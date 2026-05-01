@@ -5,6 +5,8 @@
 *.dll
 *.so
 *.dylib
+benchmark
+unit_tests
 
 # Object and static/shared library files
 *.o
