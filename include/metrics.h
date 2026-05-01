@@ -1,10 +1,12 @@
 #ifndef METRICS_H
 #define METRICS_H
 
+#include <stdint.h>
+
 typedef struct {
-  long comparisons;
-  long swaps;
-  long movements;
+  uint64_t comparisons;
+  uint64_t swaps;
+  uint64_t movements;
 } Metrics;
 
 void reset_metrics(Metrics *m);

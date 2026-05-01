@@ -1,6 +1,10 @@
 #include "sorting.h"
 
 static void swap(Image *a, Image *b, Metrics *metrics) {
+  if (a == b) {
+    return;
+  }
+
   Image temp = *a;
   *a = *b;
   *b = temp;
@@ -44,7 +48,7 @@ void heap_sort(Image arr[], int n, Metrics *metrics) {
     heapify(arr, n, i - 1, metrics);
   }
 
-  for (int i = n; i > 0; i--) {
+  for (int i = n; i > 1; i--) {
     int last = i - 1;
     swap(&arr[0], &arr[last], metrics);
     heapify(arr, last, 0, metrics);
