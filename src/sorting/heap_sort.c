@@ -1,16 +1,4 @@
-#include "sorting.h"
-
-static void swap(Image *a, Image *b, Metrics *metrics) {
-  if (a == b) {
-    return;
-  }
-
-  Image temp = *a;
-  *a = *b;
-  *b = temp;
-  metrics->swaps++;
-  metrics->movements += 3;
-}
+#include "common.h"
 
 static void heapify(Image arr[], int n, int i, Metrics *metrics) {
   int largest = i;
@@ -32,7 +20,7 @@ static void heapify(Image arr[], int n, int i, Metrics *metrics) {
   }
 
   if (largest != i) {
-    swap(&arr[i], &arr[largest], metrics);
+    swap_images_counted(&arr[i], &arr[largest], metrics);
     heapify(arr, n, largest, metrics);
   }
 }
@@ -50,7 +38,7 @@ void heap_sort(Image arr[], int n, Metrics *metrics) {
 
   for (int i = n; i > 1; i--) {
     int last = i - 1;
-    swap(&arr[0], &arr[last], metrics);
+    swap_images_counted(&arr[0], &arr[last], metrics);
     heapify(arr, last, 0, metrics);
   }
 }

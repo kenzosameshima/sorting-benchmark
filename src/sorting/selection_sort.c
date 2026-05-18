@@ -1,12 +1,4 @@
-#include "sorting.h"
-
-static void swap(Image *a, Image *b, Metrics *metrics) {
-  Image temp = *a;
-  *a = *b;
-  *b = temp;
-  metrics->swaps++;
-  metrics->movements += 3;
-}
+#include "common.h"
 
 void selection_sort(Image arr[], int n, Metrics *metrics) {
   reset_metrics(metrics);
@@ -25,7 +17,7 @@ void selection_sort(Image arr[], int n, Metrics *metrics) {
     }
 
     if (min_idx != i) {
-      swap(&arr[i], &arr[min_idx], metrics);
+      swap_images_counted(&arr[i], &arr[min_idx], metrics);
     }
   }
 }
