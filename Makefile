@@ -1,7 +1,7 @@
 # Compiler and flags
 CC := gcc
 CSTD ?= -std=c17
-INCLUDES := -Iinclude -Iexperiments
+INCLUDES := -Iinclude
 WARNINGS := -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow \
 	-Wformat=2 -Wcast-align -Wmissing-declarations -Wstrict-overflow=5 \
 	-Wundef -Werror
@@ -34,7 +34,12 @@ ifeq ($(STRICT),1)
 BUILD_MODE := $(BUILD_MODE)-strict
 endif
 
-CFLAGS := $(CSTD) $(OPT) $(INCLUDES) $(WARNINGS) $(SANITIZER_FLAGS) -MMD -MP
+empty :=
+space := $(empty) $(empty)
+CFLAGS_FOR_CSV := $(subst $(space),_,$(strip $(CSTD) $(OPT) $(WARNINGS) $(SANITIZER_FLAGS)))
+
+CFLAGS := $(CSTD) $(OPT) $(INCLUDES) $(WARNINGS) $(SANITIZER_FLAGS) \
+	-DCOMPILATION_FLAGS=\"$(CFLAGS_FOR_CSV)\" -MMD -MP
 LDFLAGS := $(SANITIZER_FLAGS)
 LDLIBS := -lm
 
@@ -42,11 +47,11 @@ LDLIBS := -lm
 BUILD_ROOT := build
 BUILD_DIR := $(BUILD_ROOT)/$(BUILD_MODE)
 TARGET := benchmark
-TEST_TARGET := unit_tests
+TEST_TARGET := test_sorting
 
-COMMON_SOURCES := $(wildcard data/*.c metrics/*.c sorting/*.c src/utils.c)
-BENCH_SOURCES := src/main.c experiments/tests.c $(COMMON_SOURCES)
-UNIT_SOURCES := tests/unit_tests.c $(COMMON_SOURCES)
+COMMON_SOURCES := $(wildcard src/benchmark/*.c src/data/*.c src/metrics/*.c src/output/*.c src/sorting/*.c) src/utils.c
+BENCH_SOURCES := src/main.c $(COMMON_SOURCES)
+UNIT_SOURCES := tests/test_sorting.c $(COMMON_SOURCES)
 
 BENCH_OBJECTS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(BENCH_SOURCES))
 UNIT_OBJECTS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(UNIT_SOURCES))
@@ -70,10 +75,15 @@ CLEAN_CMD := rm -rf $(BUILD_ROOT) $(BIN) $(TEST_BIN)
 endif
 
 # Phony targets
-.PHONY: all run test asan-test clean rebuild help
+.PHONY: all bench academic-bench run test sanitize asan-test lint format clean rebuild help
 
 # Default target
 all: $(BIN)
+
+bench: $(BIN)
+
+academic-bench: $(BIN)
+	$(RUN_CMD) --seed 42 --repetitions 30 --skip-quadratic-after 10000
 
 # Link executables
 $(BIN): $(BENCH_OBJECTS)
@@ -95,9 +105,19 @@ run: $(BIN)
 test: $(TEST_BIN)
 	$(TEST_RUN_CMD)
 
+sanitize:
+	$(MAKE) clean
+	$(MAKE) SANITIZE=1 all test
+
 asan-test:
 	$(MAKE) clean
 	ASAN_OPTIONS=detect_leaks=0 $(MAKE) SANITIZE=1 test
+
+lint:
+	cppcheck --enable=all src/ tests/
+
+format:
+	clang-format -i src/*.c src/benchmark/*.c src/sorting/*.c src/data/*.c src/metrics/*.c src/output/*.c tests/*.c include/*.h
 
 # Clean build artifacts (ignore errors with leading dash)
 clean:
@@ -110,9 +130,14 @@ rebuild: clean all
 help:
 	@echo "Makefile targets disponiveis:"
 	@echo "  all      - Compila o benchmark"
+	@echo "  bench    - Compila o benchmark"
+	@echo "  academic-bench - Executa perfil academico com 30 repeticoes"
 	@echo "  run      - Executa o benchmark"
 	@echo "  test     - Compila e executa os testes unitarios"
+	@echo "  sanitize - Compila benchmark e testes com sanitizers"
 	@echo "  asan-test - Executa testes com sanitizers e LeakSanitizer desativado"
+	@echo "  lint     - Executa cppcheck"
+	@echo "  format   - Formata fontes e headers com clang-format (requer clang-format no PATH)"
 	@echo "  clean    - Remove binarios, objetos e dependencias"
 	@echo "  rebuild  - Limpa e recompila tudo"
 	@echo "  help     - Mostra esta mensagem"

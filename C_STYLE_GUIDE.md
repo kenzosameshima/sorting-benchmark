@@ -16,16 +16,16 @@ best practices from the Linux Kernel.
 - Keep each sorting algorithm in a separate `.c` and `.h` file.
 - Keep utility functions (copy array, check sorting) in `utils.c`.
 - Keep metrics handling in `metrics.c`.
-- Keep experiments in `experiments.c`.
+- Keep benchmark orchestration in `bench/benchmark.c`.
 - Suggested directories:
 
 ```text
 sorting_analysis/
   src/
-  data/
-  metrics/
-  sorting/
-  experiments/
+  src/data/
+  src/metrics/
+  src/sorting/
+  bench/
   include/
 ```
 
