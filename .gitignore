@@ -5,9 +5,9 @@
 *.dll
 *.so
 *.dylib
-benchmark
-unit_tests
-test_sorting
+/benchmark
+/unit_tests
+/test_sorting
 
 # Object and static/shared library files
 *.o
@@ -30,6 +30,9 @@ Thumbs.db
 results/*.csv
 plots/*.png
 !plots/.gitkeep
+/runs/
+/report/
+/report.html
 
 # Python / virtualenv
 .venv/

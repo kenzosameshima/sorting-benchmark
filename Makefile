@@ -61,13 +61,29 @@ DEPS := $(BENCH_OBJECTS:.o=.d) $(UNIT_OBJECTS:.o=.d)
 ifeq ($(OS),Windows_NT)
 BIN := $(TARGET).exe
 TEST_BIN := $(TEST_TARGET).exe
-RUN_CMD := .\$(BIN)
-TEST_RUN_CMD := .\$(TEST_BIN)
-MKDIR_CMD = if not exist "$(subst /,\,$(dir $@))" mkdir "$(subst /,\,$(dir $@))"
-CLEAN_CMD := if exist "$(BUILD_ROOT)" rmdir /S /Q "$(BUILD_ROOT)" & if exist "$(BIN)" del /Q "$(BIN)" & if exist "$(TEST_BIN)" del /Q "$(TEST_BIN)"
 else
 BIN := $(TARGET)
 TEST_BIN := $(TEST_TARGET)
+endif
+
+# mingw32-make runs recipes with sh.exe when one is on PATH (Git Bash, MSYS2)
+# and with cmd.exe otherwise, so pick the command syntax from the shell that
+# make actually uses, not from the OS. When sh.exe is found, SHELL is its full
+# path; when it is not, SHELL stays the bare name "sh.exe" and make falls back
+# to cmd.exe.
+USE_CMD_SHELL := 0
+ifeq ($(OS),Windows_NT)
+ifeq ($(findstring /,$(subst \,/,$(SHELL))),)
+USE_CMD_SHELL := 1
+endif
+endif
+
+ifeq ($(USE_CMD_SHELL),1)
+RUN_CMD := .\$(BIN)
+TEST_RUN_CMD := .\$(TEST_BIN)
+MKDIR_CMD = if not exist "$(subst /,\,$(dir $@))" mkdir "$(subst /,\,$(dir $@))"
+CLEAN_CMD := (if exist "$(BUILD_ROOT)" rmdir /S /Q "$(BUILD_ROOT)") & (if exist "$(BIN)" del /Q "$(BIN)") & (if exist "$(TEST_BIN)" del /Q "$(TEST_BIN)")
+else
 RUN_CMD := ./$(BIN)
 TEST_RUN_CMD := ./$(TEST_BIN)
 MKDIR_CMD = mkdir -p $(dir $@)

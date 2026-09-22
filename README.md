@@ -25,15 +25,98 @@ counters with reproducible input generation.
 - src/metrics/: metric reset and counters support
 - src/benchmark/: benchmark runner, statistics, and validation
 - src/output/: CSV writer
-- tests/: sorting test suite
-- results/: generated CSV output
+- tests/test_sorting.c: sorting, validation and golden-counter tests (C)
+- tests/test_report.py: tests for the report tooling (Python)
+- scripts/run_suite.py: build + test + benchmark + environment capture
+- scripts/build_report.py, scripts/report_template.html: interactive HTML report
+- scripts/analyze_results.py: legacy matplotlib plots (see the note below)
+- CMakeLists.txt, CMakePresets.json: primary build system (the Makefile still works)
+- .github/workflows/ci.yml: CI on Ubuntu and Windows
+- results/: generated CSV output of a direct `./benchmark` run
+- runs/: one directory per `run_suite.py` run (CSV, `run_info.json`, log; git-ignored)
 
 ## Build Requirements
 
-- GCC with C17 support
-- make or mingw32-make
+- GCC or Clang with C17 support (MinGW/MSYS2 UCRT64 on Windows; MSVC is not supported)
+- CMake 3.16+ and Ninja (recommended), or make / mingw32-make
+- Python 3.8+ for `scripts/run_suite.py` and `scripts/build_report.py` (standard library only)
 - clang-format for `make format`
 - cppcheck for `make lint`
+
+## Recommended Workflow (CMake + run_suite)
+
+One command that builds with strict warnings, runs the tests, measures, and records
+the environment. It behaves the same on Windows, Ubuntu and WSL:
+
+```bash
+python scripts/run_suite.py --profile quick --report
+```
+
+Profiles: `smoke` (CI), `quick` (sizes 100..10000, 15 reps), `academic`
+(sizes 100..100000, 30 reps). Any option can be overridden (`--seed`, `--sizes`,
+`--repetitions`, `--dataset`, `--cc clang`, ...). Results go to `runs/<label>/`:
+
+- `results/results.csv`, `results/summary.csv`: the benchmark output
+- `run_info.json`: CPU, OS/kernel, WSL flag, compiler (banner and target), CMake
+  configuration, power plan/governor, git commit and dirty flag, command line,
+  pinned CPU and priority
+- `run.log`, and `report.html` when `--report` is given
+
+The script refuses to benchmark a build whose tests fail. It pins the benchmark to
+one CPU and raises its priority (`--pin none` / `--no-priority` disable this). On a
+hybrid Intel CPU it prefers a performance core (Windows and native Linux); WSL2 does
+not expose the topology, so pass `--pin N` explicitly there.
+
+Direct CMake usage (presets `release`, `debug`, `strict`, `sanitize`):
+
+```bash
+cmake --preset release && cmake --build --preset release && ctest --preset release
+```
+
+The presets use Ninja. Without Ninja on Windows, pass a generator explicitly, for
+example `cmake -S . -B build/mingw -G "MinGW Makefiles"` (this generator requires
+that `sh.exe` is **not** on `PATH`; with Git Bash/MSYS2 on `PATH` use Ninja or
+`-G "MSYS Makefiles"`). `run_suite.py` selects a working generator automatically.
+
+CMake builds with `-O2` and no `-DNDEBUG`, like the Makefile, so results stay
+comparable with earlier runs.
+
+## Comparing Windows and Ubuntu
+
+1. Run the same profile with the same seed on each OS (use the same compiler and
+   version on both if you want to isolate the OS effect):
+   `python scripts/run_suite.py --profile academic --seed 42`
+2. Copy the run directories to one machine and build the cross-platform report:
+   `python scripts/build_report.py runs/windows-... runs/wsl-... -o report.html`
+3. Open `report.html`. It shows the environment of each run, integrity checks,
+   interactive curves with error bars, a run-to-run ratio table with bootstrap
+   confidence intervals, and per-cell data-quality flags.
+
+The operation counters are deterministic: with the same seed they must be identical
+on every OS and compiler. The report checks this and `build_report.py
+--fail-on-mismatch` exits with status 3 otherwise (this is what CI uses).
+
+Known limitations of the time measurements (also stated in the report):
+
+- The counters are updated inside the timed region, so times include instrumentation
+  overhead that differs per algorithm and per compiler.
+- There is no warm-up run and the algorithm order is fixed; the first repetition is
+  often slower (flagged as *cold start*).
+- Cross-OS time ratios mix OS, compiler and libc effects unless the compiler is the
+  same. WSL2 runs inside a VM.
+
+## Continuous Integration
+
+`.github/workflows/ci.yml` runs on every push and pull request:
+
+- `build-test`: Ubuntu (gcc, clang, both with `SB_STRICT`, and gcc with ASan+UBSan)
+  and Windows (MSYS2 UCRT64 gcc): build with `-Werror`, then `ctest`
+- `benchmark`: `run_suite.py` on Ubuntu and Windows with the same seed
+- `compare`: builds the cross-platform report, publishes it as an artifact and in the
+  job summary, and **fails if counters differ between the two OSes**
+
+Timings on shared runners are noisy; treat them as indicative and the counter check
+as the hard gate. `workflow_dispatch` accepts a `profile` input for longer runs.
 
 ## Build and Run
 
@@ -78,6 +161,15 @@ Run unit tests:
 
 - Linux/macOS: make test
 - Windows (MinGW): mingw32-make test
+- Any OS with CMake: `ctest --test-dir build/cmake-release --output-on-failure`
+
+The C tests include **golden counters**: `comparisons`, `swaps` and `movements` for
+every algorithm x dataset at n=100 and n=1000 with seed 42 are pinned in
+`tests/test_sorting.c`. They are deterministic and were verified identical on
+MinGW gcc 15, Ubuntu gcc 13 and clang 18. A failure means an algorithm, a counter,
+the RNG or a generator changed. If that change is intentional, regenerate the table
+and review the diff. `tests/test_report.py` covers the report statistics and the
+counter cross-check (`python -m unittest discover -s tests -p test_report.py`).
 
 Clean artifacts:
 
@@ -183,6 +275,14 @@ original array.
 
 ## Analyzing Benchmark Results
 
+Prefer the interactive report (`scripts/build_report.py`, see above): it needs no
+dependencies, keeps datasets and sizes separate, and shows confidence intervals.
+
+The matplotlib script below is kept for quick static plots. Note that it averages
+`time_mean` across datasets (and, for the dataset plot, across sizes), which mixes
+very different behaviours (for example insertion sort on sorted vs reversed input),
+so read its plots with care.
+
 Install dependencies (recommended: use a virtual environment).
 
 Linux/WSL (recommended):
@@ -226,13 +326,11 @@ Note: Python is used only for offline analysis; benchmark execution remains impl
 
 ## Experimental Environment
 
-- CPU:
-- RAM:
-- Operating System:
-- Compiler:
-- Compilation Flags:
-- Number of Repetitions:
-- RNG Seed:
+Recorded automatically in `runs/<label>/run_info.json` by `scripts/run_suite.py` and
+shown in the report: CPU, RAM, operating system and kernel (including WSL2), compiler
+banner and target, compilation flags, number of repetitions, RNG seed, pinned CPU,
+priority, power plan/governor, and git commit. Runs made by calling `./benchmark`
+directly only have the `compiler`, `flags` and `seed` columns of the CSV.
 
 ## Reproducibility
 

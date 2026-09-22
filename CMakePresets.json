@@ -1,0 +1,53 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "release",
+      "displayName": "Release (-O2, strict warnings as errors)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/cmake-release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug (-O0 -g)",
+      "inherits": "release",
+      "binaryDir": "${sourceDir}/build/cmake-debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "strict",
+      "displayName": "Release + extra warnings",
+      "inherits": "release",
+      "binaryDir": "${sourceDir}/build/cmake-strict",
+      "cacheVariables": { "SB_STRICT": "ON" }
+    },
+    {
+      "name": "sanitize",
+      "displayName": "ASan + UBSan",
+      "inherits": "debug",
+      "binaryDir": "${sourceDir}/build/cmake-sanitize",
+      "cacheVariables": { "SB_SANITIZE": "ON" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "release", "configurePreset": "release" },
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "strict", "configurePreset": "strict" },
+    { "name": "sanitize", "configurePreset": "sanitize" }
+  ],
+  "testPresets": [
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize",
+      "output": { "outputOnFailure": true },
+      "environment": { "ASAN_OPTIONS": "detect_leaks=0" }
+    }
+  ]
+}
