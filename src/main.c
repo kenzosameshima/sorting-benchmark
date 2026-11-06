@@ -37,9 +37,11 @@ static void print_usage(const char *program) {
   fprintf(stderr,
           "Usage: %s [--mode quick|robust] [--seed NUMBER] [--repetitions N] "
           "[--max-size N] [--skip-quadratic-after N] [--dataset TYPE] "
-          "[--sizes A,B,C]\n"
+          "[--sizes A,B,C] [--dump-dataset DIR]\n"
           "Datasets: random, sorted, reversed, nearly_sorted, few_unique, "
-          "organ_pipe, all\n"
+          "organ_pipe, sawtooth, zipf, wide_range, all\n"
+          "--dump-dataset DIR: write each dataset's first repetition to "
+          "DIR/<dataset>_<n>.csv (id,size).\n"
           "--mode quick: random dataset only, small sizes, fast smoke run.\n"
           "--mode robust: all dataset types, full size range.\n"
           "Flags passed after --mode override its defaults.\n",
@@ -89,7 +91,8 @@ int main(int argc, char *argv[]) {
     10000,
     DATASET_RANDOM,
     NULL,
-    0
+    0,
+    NULL
   };
 
   for (int i = 1; i < argc; i++) {
@@ -150,6 +153,13 @@ int main(int argc, char *argv[]) {
         return 1;
       }
       i++;
+    } else if (strcmp(argv[i], "--dump-dataset") == 0) {
+      if (i + 1 >= argc) {
+        print_usage(argv[0]);
+        return 1;
+      }
+      config.dump_dir = argv[i + 1];
+      i++;
     } else if (strcmp(argv[i], "--sizes") == 0) {
       if (i + 1 >= argc ||
           !parse_sizes_arg(argv[i + 1], custom_sizes, &custom_size_count)) {
@@ -160,7 +170,7 @@ int main(int argc, char *argv[]) {
       config.size_count = custom_size_count;
       i++;
     } else {
-      fprintf(stderr, "Argumento desconhecido: %s\n", argv[i]);
+      fprintf(stderr, "Unknown argument: %s\n", argv[i]);
       print_usage(argv[0]);
       return 1;
     }

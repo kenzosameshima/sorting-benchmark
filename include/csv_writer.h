@@ -14,6 +14,7 @@ typedef struct {
 
 int open_result_files(ResultFiles *files, const char *directory);
 void close_result_files(ResultFiles *files);
+int write_dataset_csv(const char *directory, const char *dataset, int n, const Image images[]);
 void write_result_headers(const ResultFiles *files);
 void write_run_row(FILE *file,
                    const SortAlgorithm *algorithm,
