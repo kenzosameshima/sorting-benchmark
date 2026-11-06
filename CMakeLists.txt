@@ -113,7 +113,7 @@ add_test(NAME benchmark_smoke
   COMMAND benchmark --seed 42 --repetitions 2 --sizes 10,100 --dataset all
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 set_tests_properties(benchmark_smoke PROPERTIES
-  PASS_REGULAR_EXPRESSION "Experimentos finalizados")
+  PASS_REGULAR_EXPRESSION "Experiments finished")
 
 # Tests for the Python report tooling (standard library only). Skipped when no
 # interpreter is available so the C build never depends on Python.
