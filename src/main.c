@@ -35,8 +35,8 @@ static int parse_int_arg(const char *value, int *out) {
 
 static void print_usage(const char *program) {
   fprintf(stderr,
-          "Uso: %s [--mode quick|robust] [--seed NUMERO] [--repetitions N] "
-          "[--max-size N] [--skip-quadratic-after N] [--dataset TIPO] "
+          "Usage: %s [--mode quick|robust] [--seed NUMBER] [--repetitions N] "
+          "[--max-size N] [--skip-quadratic-after N] [--dataset TYPE] "
           "[--sizes A,B,C]\n"
           "Datasets: random, sorted, reversed, nearly_sorted, few_unique, "
           "organ_pipe, all\n"

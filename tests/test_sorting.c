@@ -47,7 +47,7 @@ static int run_case(const SortAlgorithm *sorter, const TestCase *test_case) {
     original = malloc((size_t)test_case->count * sizeof(Image));
     temp = malloc((size_t)test_case->count * sizeof(Image));
     if (!images || !original || !temp) {
-      fprintf(stderr, "Falha ao alocar caso de teste.\n");
+      fprintf(stderr, "Failed to allocate test case.\n");
       free(images);
       free(original);
       free(temp);
@@ -67,7 +67,7 @@ static int run_case(const SortAlgorithm *sorter, const TestCase *test_case) {
   }
 
   if (!ok) {
-    fprintf(stderr, "Falha: %s em '%s'.\n", sorter->name, test_case->name);
+    fprintf(stderr, "Failure: %s in '%s'.\n", sorter->name, test_case->name);
   }
 
   free(images);
@@ -93,7 +93,7 @@ static int run_random_case(const SortAlgorithm *sorter) {
   ok = is_sorted_by_size(images, count) && has_same_items(original, images, count);
 
   if (!ok) {
-    fprintf(stderr, "Falha: %s em 'random'.\n", sorter->name);
+    fprintf(stderr, "Failure: %s in 'random'.\n", sorter->name);
   }
 
   return ok;
@@ -124,7 +124,7 @@ static int test_dataset_generation(void) {
     rng_seed(&rng, 9876U);
     generate_images(images, (int)(sizeof(images) / sizeof(images[0])), &rng, datasets[i]);
     if (!has_valid_id_permutation(images, (int)(sizeof(images) / sizeof(images[0])))) {
-      fprintf(stderr, "Falha: dataset invalido '%s'.\n", dataset_type_name(datasets[i]));
+      fprintf(stderr, "Failure: invalid dataset '%s'.\n", dataset_type_name(datasets[i]));
       return 0;
     }
   }
@@ -267,6 +267,16 @@ static const GoldenCounters golden_counters[] = {
   {"quick", DATASET_FEW_UNIQUE, 1000, 4940U, 2008U, 6034U},
   {"merge", DATASET_FEW_UNIQUE, 1000, 8503U, 0U, 19952U},
   {"heap", DATASET_FEW_UNIQUE, 1000, 15927U, 8363U, 25089U},
+  {"shell", DATASET_RANDOM, 100, 772U, 0U, 1162U},
+  {"shell", DATASET_SORTED, 100, 342U, 0U, 684U},
+  {"shell", DATASET_REVERSED, 100, 500U, 0U, 914U},
+  {"shell", DATASET_NEARLY_SORTED, 100, 361U, 0U, 703U},
+  {"shell", DATASET_FEW_UNIQUE, 100, 532U, 0U, 905U},
+  {"shell", DATASET_RANDOM, 1000, 13729U, 0U, 19616U},
+  {"shell", DATASET_SORTED, 1000, 5457U, 0U, 10914U},
+  {"shell", DATASET_REVERSED, 1000, 8550U, 0U, 14834U},
+  {"shell", DATASET_NEARLY_SORTED, 1000, 7953U, 0U, 13420U},
+  {"shell", DATASET_FEW_UNIQUE, 1000, 8247U, 0U, 14019U},
 };
 
 static const SortAlgorithm *find_sort_algorithm(const char *name) {
@@ -302,7 +312,7 @@ static int check_golden_entry(const GoldenCounters *golden) {
 
     if (!ok) {
       fprintf(stderr,
-              "Falha golden: %s/%s n=%d esperado cmp=%" PRIu64 " swp=%" PRIu64 " mov=%" PRIu64
+              "Golden failure: %s/%s n=%d expected cmp=%" PRIu64 " swp=%" PRIu64 " mov=%" PRIu64
               " obtido cmp=%" PRIu64 " swp=%" PRIu64 " mov=%" PRIu64 ".\n",
               golden->algorithm,
               dataset_type_name(golden->dataset),
@@ -315,7 +325,7 @@ static int check_golden_entry(const GoldenCounters *golden) {
               metrics.movements);
     }
   } else {
-    fprintf(stderr, "Falha golden: algoritmo '%s' ausente ou sem memoria.\n", golden->algorithm);
+    fprintf(stderr, "Golden failure: algorithm '%s' missing or out of memory.\n", golden->algorithm);
   }
 
   free(images);
@@ -370,7 +380,7 @@ int main(void) {
   }
 
   if (!test_validation_rejects_duplicate_ids()) {
-    fprintf(stderr, "Falha: validacao aceitou ids duplicados.\n");
+    fprintf(stderr, "Failure: validation accepted duplicate ids.\n");
     failures++;
   }
 
@@ -379,27 +389,27 @@ int main(void) {
   }
 
   if (!test_dataset_parse()) {
-    fprintf(stderr, "Falha: parse de datasets.\n");
+    fprintf(stderr, "Failure: dataset parsing.\n");
     failures++;
   }
 
   if (!test_statistics_module()) {
-    fprintf(stderr, "Falha: modulo de estatisticas.\n");
+    fprintf(stderr, "Failure: statistics module.\n");
     failures++;
   }
 
   if (!test_registry_module()) {
-    fprintf(stderr, "Falha: modulo de registry.\n");
+    fprintf(stderr, "Failure: registry module.\n");
     failures++;
   }
 
   if (!test_csv_writer_module()) {
-    fprintf(stderr, "Falha: modulo csv_writer.\n");
+    fprintf(stderr, "Failure: csv_writer module.\n");
     failures++;
   }
 
   if (!test_golden_counters()) {
-    fprintf(stderr, "Falha: contadores golden divergentes.\n");
+    fprintf(stderr, "Failure: golden counters diverge.\n");
     failures++;
   }
 
@@ -408,6 +418,6 @@ int main(void) {
     return 1;
   }
 
-  printf("Todos os testes de ordenacao passaram.\n");
+  printf("All sorting tests passed.\n");
   return 0;
 }

@@ -30,13 +30,13 @@ int rng_range(Rng *rng, int min, int max) {
   uint32_t r;
 
   if (max < min) {
-    fprintf(stderr, "Intervalo invalido\n");
+    fprintf(stderr, "Invalid range\n");
     exit(EXIT_FAILURE);
   }
 
   range = (uint32_t)(max - min + 1);
   if (range == 0U) {
-    fprintf(stderr, "Intervalo invalido\n");
+    fprintf(stderr, "Invalid range\n");
     exit(EXIT_FAILURE);
   }
 

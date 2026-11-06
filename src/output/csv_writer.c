@@ -23,7 +23,7 @@ static int ensure_output_directory(const char *path) {
     return 1;
   }
 
-  fprintf(stderr, "Erro ao criar diretorio de resultados: %s\n", path);
+  fprintf(stderr, "Failed to create results directory: %s\n", path);
   return 0;
 }
 
@@ -56,13 +56,13 @@ int open_result_files(ResultFiles *files, const char *directory) {
 
   files->runs = fopen(runs_path, "w");
   if (!files->runs) {
-    fprintf(stderr, "Erro ao abrir arquivo de resultados detalhados.\n");
+    fprintf(stderr, "Failed to open detailed results file.\n");
     return 0;
   }
 
   files->summary = fopen(summary_path, "w");
   if (!files->summary) {
-    fprintf(stderr, "Erro ao abrir arquivo de resumo.\n");
+    fprintf(stderr, "Failed to open summary file.\n");
     fclose(files->runs);
     files->runs = NULL;
     return 0;
