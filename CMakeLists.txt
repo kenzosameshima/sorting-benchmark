@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(sorting_benchmark VERSION 1.0 LANGUAGES C)
+project(sorting_benchmark VERSION 1.0 LANGUAGES C CXX)
 
 # ---------------------------------------------------------------------------
 # Options (mirror the Makefile: DEBUG / STRICT / SANITIZE)
@@ -21,6 +21,13 @@ endif()
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF) # -std=c17, not gnu17 (same as the Makefile)
+
+# C++ is used only for the std::sort / std::stable_sort baselines.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 
 # The Makefile builds with plain -O2 (no -DNDEBUG). CMake's default Release
 # flags are -O3 -DNDEBUG, which would make new results incomparable with old
@@ -70,12 +77,20 @@ file(GLOB SB_CORE_SOURCES CONFIGURE_DEPENDS
   src/data/*.c
   src/metrics/*.c
   src/output/*.c
-  src/sorting/*.c)
+  src/sorting/*.c
+  src/sorting/*.cpp)
 list(APPEND SB_CORE_SOURCES src/utils.c)
 
 add_library(sb_core STATIC ${SB_CORE_SOURCES})
 target_include_directories(sb_core PUBLIC include)
-target_compile_options(sb_core PUBLIC ${SB_WARNINGS} ${SB_SANITIZER_FLAGS})
+# -Wstrict-prototypes / -Wmissing-prototypes are C-only: keep them off C++.
+set(SB_CXX_WARNINGS ${SB_WARNINGS})
+list(REMOVE_ITEM SB_CXX_WARNINGS -Wstrict-prototypes -Wmissing-prototypes
+  -Werror=implicit-function-declaration)
+target_compile_options(sb_core PUBLIC
+  "$<$<COMPILE_LANGUAGE:C>:${SB_WARNINGS}>"
+  "$<$<COMPILE_LANGUAGE:CXX>:${SB_CXX_WARNINGS}>"
+  ${SB_SANITIZER_FLAGS})
 target_link_options(sb_core PUBLIC ${SB_SANITIZER_FLAGS})
 target_compile_definitions(sb_core PUBLIC "COMPILATION_FLAGS=\"${SB_FLAGS_STRING}\"")
 if(NOT WIN32)

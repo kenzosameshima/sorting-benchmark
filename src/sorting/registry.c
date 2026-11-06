@@ -38,6 +38,26 @@ static void run_radix(Image arr[], int n, Image temp[], Metrics *metrics) {
   radix_sort(arr, n, temp, metrics);
 }
 
+static void run_shell(Image arr[], int n, Image temp[], Metrics *metrics) {
+  (void)temp;
+  shell_sort(arr, n, metrics);
+}
+
+static void run_qsort_libc(Image arr[], int n, Image temp[], Metrics *metrics) {
+  (void)temp;
+  qsort_libc(arr, n, metrics);
+}
+
+static void run_std_sort(Image arr[], int n, Image temp[], Metrics *metrics) {
+  (void)temp;
+  std_sort(arr, n, metrics);
+}
+
+static void run_std_stable_sort(Image arr[], int n, Image temp[], Metrics *metrics) {
+  (void)temp;
+  std_stable_sort(arr, n, metrics);
+}
+
 const SortAlgorithm *get_sort_algorithms(size_t *count) {
   static const SortAlgorithm algorithms[] = {
     {"bubble", "Quadratic adjacent-swap stable sort", run_bubble, 1, 1, 0},
@@ -47,7 +67,11 @@ const SortAlgorithm *get_sort_algorithms(size_t *count) {
     {"quick_naive", "First-element-pivot quicksort, quadratic on sorted/reversed input", run_quick_naive, 1, 0, 0},
     {"merge", "Stable top-down merge sort with external buffer", run_merge, 0, 1, 1},
     {"heap", "In-place binary heap sort", run_heap, 0, 0, 0},
-    {"radix", "LSD radix sort (base 256) over the sort key", run_radix, 0, 1, 1}
+    {"radix", "LSD radix sort (base 256) over the sort key", run_radix, 0, 1, 1},
+    {"shell", "Shell sort with Knuth gaps (3k+1)", run_shell, 0, 0, 0},
+    {"qsort", "C library qsort baseline (only comparisons are counted)", run_qsort_libc, 0, 0, 0},
+    {"std_sort", "C++ std::sort (introsort) baseline (only comparisons are counted)", run_std_sort, 0, 0, 0},
+    {"std_stable_sort", "C++ std::stable_sort baseline (only comparisons are counted)", run_std_stable_sort, 0, 1, 0}
   };
 
   if (count) {

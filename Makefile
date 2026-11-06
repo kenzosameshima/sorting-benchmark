@@ -1,5 +1,7 @@
 # Compiler and flags
 CC := gcc
+CXX := g++
+CXXSTD ?= -std=c++17
 CSTD ?= -std=c17
 INCLUDES := -Iinclude
 WARNINGS := -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow \
@@ -34,6 +36,8 @@ ifeq ($(STRICT),1)
 BUILD_MODE := $(BUILD_MODE)-strict
 endif
 
+CXXFLAGS := $(CXXSTD) $(OPT) $(INCLUDES) $(filter-out -Wstrict-prototypes -Wmissing-prototypes -Werror=implicit-function-declaration,$(WARNINGS)) $(SANITIZER_FLAGS) -MMD -MP
+
 empty :=
 space := $(empty) $(empty)
 CFLAGS_FOR_CSV := $(subst $(space),_,$(strip $(CSTD) $(OPT) $(WARNINGS) $(SANITIZER_FLAGS)))
@@ -50,11 +54,13 @@ TARGET := benchmark
 TEST_TARGET := test_sorting
 
 COMMON_SOURCES := $(wildcard src/benchmark/*.c src/data/*.c src/metrics/*.c src/output/*.c src/sorting/*.c) src/utils.c
+CXX_SOURCES := $(wildcard src/sorting/*.cpp)
+COMMON_SOURCES += $(CXX_SOURCES)
 BENCH_SOURCES := src/main.c $(COMMON_SOURCES)
 UNIT_SOURCES := tests/test_sorting.c $(COMMON_SOURCES)
 
-BENCH_OBJECTS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(BENCH_SOURCES))
-UNIT_OBJECTS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(UNIT_SOURCES))
+BENCH_OBJECTS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(patsubst %.c,$(BUILD_DIR)/%.o,$(BENCH_SOURCES)))
+UNIT_OBJECTS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(patsubst %.c,$(BUILD_DIR)/%.o,$(UNIT_SOURCES)))
 DEPS := $(BENCH_OBJECTS:.o=.d) $(UNIT_OBJECTS:.o=.d)
 
 # Platform-dependent settings
@@ -103,15 +109,19 @@ academic-bench: $(BIN)
 
 # Link executables
 $(BIN): $(BENCH_OBJECTS)
-	$(CC) $(LDFLAGS) $(BENCH_OBJECTS) -o $@ $(LDLIBS)
+	$(CXX) $(LDFLAGS) $(BENCH_OBJECTS) -o $@ $(LDLIBS)
 
 $(TEST_BIN): $(UNIT_OBJECTS)
-	$(CC) $(LDFLAGS) $(UNIT_OBJECTS) -o $@ $(LDLIBS)
+	$(CXX) $(LDFLAGS) $(UNIT_OBJECTS) -o $@ $(LDLIBS)
 
 # Compile individual object files
 $(BUILD_DIR)/%.o: %.c
 	$(MKDIR_CMD)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: %.cpp
+	$(MKDIR_CMD)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Run the program
 run: $(BIN)
@@ -133,7 +143,7 @@ lint:
 	cppcheck --enable=all src/ tests/
 
 format:
-	clang-format -i src/*.c src/benchmark/*.c src/sorting/*.c src/data/*.c src/metrics/*.c src/output/*.c tests/*.c include/*.h
+	clang-format -i src/*.c src/benchmark/*.c src/sorting/*.c src/sorting/*.cpp src/data/*.c src/metrics/*.c src/output/*.c tests/*.c include/*.h
 
 # Clean build artifacts (ignore errors with leading dash)
 clean:

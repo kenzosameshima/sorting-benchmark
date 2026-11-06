@@ -97,6 +97,15 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(check["mismatches"], 12)
         self.assertTrue(check["examples"])
 
+    def test_library_baseline_counter_divergence_is_ignored(self) -> None:
+        def rows(shift: int) -> list[dict]:
+            return [{"algorithm": "qsort", "size": 100, "rep": rep, "dataset_type": "random",
+                     "time": "0.001", "comparisons": 500 + shift, "swaps": 0, "movements": 0}
+                    for rep in range(1, 7)]
+        a = write_run(self.tmp / "a", rows(0), "a")
+        b = write_run(self.tmp / "b", rows(7), "b")
+        self.assertEqual(self.payload(a, b)["counter_checks"][0]["mismatches"], 0)
+
     def test_invalid_rows_are_excluded_and_counted(self) -> None:
         rows = make_rows()
         rows[0]["status"] = "INVALID"

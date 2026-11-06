@@ -28,7 +28,10 @@ from typing import Any
 SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATE = SCRIPT_DIR / "report_template.html"
 
-ALGORITHM_ORDER = ["bubble", "selection", "insertion", "quick", "quick_naive", "merge", "heap", "radix"]
+ALGORITHM_ORDER = ["bubble", "selection", "insertion", "quick", "quick_naive", "merge", "heap", "radix", "shell", "qsort", "std_sort", "std_stable_sort"]
+# Library baselines: their counters depend on the platform libc/libstdc++, so they are
+# excluded from the cross-platform counter-equality check (timings are still compared).
+LIBRARY_BASELINES = {"qsort", "std_sort", "std_stable_sort"}
 DATASET_ORDER = ["random", "sorted", "reversed", "nearly_sorted", "few_unique", "organ_pipe"]
 BOOTSTRAP_ROUNDS = 1000
 CV_WARN = 0.10  # coefficient of variation above which a cell is flagged noisy
@@ -228,6 +231,8 @@ def compare_runs(cells_a: dict[str, dict[str, Any]], cells_b: dict[str, dict[str
         ci = bootstrap_ratio_ci(tb, ta, rng)
         ratio = b["median"] / a["median"] if a["median"] > 0 else None
         shared = sorted(set(a["_counters"]) & set(b["_counters"]))
+        if key.split("|", 1)[0] in LIBRARY_BASELINES:
+            shared = []
         equal = all(a["_counters"][r] == b["_counters"][r] for r in shared) if shared else None
         if shared:
             compared += len(shared)
