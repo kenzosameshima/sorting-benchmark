@@ -1,12 +1,15 @@
-# Sorting Benchmark (C)
+# Sorting Benchmark
 
 Benchmark project for comparing sorting algorithms using execution time and operation
-counters with reproducible input generation.
+counters with reproducible input generation. The benchmark is written in C, with
+a small C++ part for the standard-library baselines; Python is used only for offline
+reporting and analysis.
 
 ## Features
 
 - Algorithms included: bubble, selection, insertion, quick, quick_naive, merge,
-  heap, radix.
+  heap, radix, shell, plus the library
+  baselines qsort (C), std_sort and std_stable_sort (C++).
 - Multiple input sizes, configurable with `--sizes`.
 - Dataset patterns: random, sorted, reversed, nearly_sorted, few_unique,
   organ_pipe, or all.
@@ -41,7 +44,7 @@ counters with reproducible input generation.
 
 ## Build Requirements
 
-- GCC or Clang with C17 support (MinGW/MSYS2 UCRT64 on Windows; MSVC is not supported)
+- GCC or Clang with C17 and C++17 support (`gcc`+`g++` or `clang`+`clang++`) (MinGW/MSYS2 UCRT64 on Windows; MSVC is not supported)
 - CMake 3.16+ and Ninja (recommended), or make / mingw32-make
 - Python 3.8+ for `scripts/run_suite.py` and `scripts/build_report.py` (standard library only)
 - clang-format for `make format`
@@ -398,6 +401,12 @@ old quadratic item-matching pass.
 - merge
 - heap
 - radix: LSD radix sort (base 256) over the sort key, with no comparisons
+- shell: Shell sort with Knuth gaps (3k+1), between the quadratic sorts and `n log n`
+- qsort: C library `qsort` as a baseline; only comparisons are counted (swaps and
+  movements happen inside libc and are reported as 0), and it is not guaranteed stable
+- std_sort / std_stable_sort: C++ `std::sort` (introsort) and `std::stable_sort` as
+  baselines, in `src/sorting/std_sort.cpp` exposed through `extern "C"`; only
+  comparisons are counted. They need a C++17 compiler (`g++`/`clang++`).
 
 ## Contributing
 
