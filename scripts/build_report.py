@@ -28,8 +28,8 @@ from typing import Any
 SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATE = SCRIPT_DIR / "report_template.html"
 
-ALGORITHM_ORDER = ["bubble", "selection", "insertion", "quick", "merge", "heap"]
-DATASET_ORDER = ["random", "sorted", "reversed", "nearly_sorted", "few_unique"]
+ALGORITHM_ORDER = ["bubble", "selection", "insertion", "quick", "quick_naive", "merge", "heap", "radix"]
+DATASET_ORDER = ["random", "sorted", "reversed", "nearly_sorted", "few_unique", "organ_pipe"]
 BOOTSTRAP_ROUNDS = 1000
 CV_WARN = 0.10  # coefficient of variation above which a cell is flagged noisy
 FIRST_REP_WARN = 1.30  # rep1 / median(rest) above which warm-up bias is flagged

@@ -340,7 +340,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--repetitions", type=int)
     p.add_argument("--sizes", help="comma-separated sizes (overrides profile)")
-    p.add_argument("--dataset", help="random|sorted|reversed|nearly_sorted|few_unique|all")
+    p.add_argument("--dataset", help="random|sorted|reversed|nearly_sorted|few_unique|organ_pipe|all")
     p.add_argument("--skip-quadratic-after", type=int, dest="skip_quadratic_after")
     p.add_argument("--label", help="run directory name under --out (default: auto)")
     p.add_argument("--out", type=Path, default=PROJECT_ROOT / "runs")

@@ -189,7 +189,7 @@ const fmtRatio = (v) => nice3(v) + "×";
 const fmtSize = (n) => (n >= 1e6 ? n / 1e6 + "M" : n >= 1e3 ? n / 1e3 + "k" : String(n));
 const pct = (v) => (v === null || v === undefined ? "–" : (v * 100).toFixed(1) + "%");
 
-const PALETTE = { bubble: "#E69F00", selection: "#56B4E9", insertion: "#009E73", quick: "#D55E00", merge: "#0072B2", heap: "#CC79A7" };
+const PALETTE = { bubble: "#E69F00", selection: "#56B4E9", insertion: "#009E73", quick: "#D55E00", quick_naive: "#F0A3A3", merge: "#0072B2", heap: "#CC79A7", radix: "#000000" };
 const EXTRA = ["#8c564b", "#7f7f7f", "#bcbd22", "#17becf"];
 const colorOf = (alg) => PALETTE[alg] || EXTRA[Math.abs([...alg].reduce((a, c) => a + c.charCodeAt(0), 0)) % EXTRA.length];
 const DASHES = ["", "7 4", "2 3", "9 3 2 3"];
@@ -517,7 +517,7 @@ function renderQuality() {
   const rows = [];
   for (const run of DATA.runs) {
     if (!state.runs.has(run.index)) continue;
-    for (const alg of DATA.algorithms) for (const size of DATA.sizes) {
+    for (const size of DATA.sizes) for (const alg of DATA.algorithms) {
       const c = run.cells[cellKey(alg, state.dataset, size)];
       if (!c) continue;
       const flags = flagsOf(c);
