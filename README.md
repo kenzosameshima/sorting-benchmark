@@ -5,9 +5,13 @@ counters with reproducible input generation.
 
 ## Features
 
-- Algorithms included: bubble, selection, insertion, quick, merge, heap.
+- Algorithms included: bubble, selection, insertion, quick, quick_naive, merge,
+  heap, radix.
 - Multiple input sizes, configurable with `--sizes`.
-- Dataset patterns: random, sorted, reversed, nearly_sorted, few_unique, or all.
+- Dataset patterns: random, sorted, reversed, nearly_sorted, few_unique,
+  organ_pipe, or all.
+- `--mode quick|robust` presets: a fast random-only smoke run, or the full
+  dataset x size matrix.
 - Repeated runs per size with median and standard deviation of elapsed time.
 - CSV output with seed, timestamp, compiler, and compilation flags.
 - Strict compilation flags with warnings treated as errors.
@@ -144,6 +148,15 @@ Run all dataset patterns over explicit sizes:
 
 - Linux/macOS: ./benchmark --seed 42 --repetitions 5 --sizes 100,1000,10000 --dataset all
 - Windows (MinGW): benchmark.exe --seed 42 --repetitions 5 --sizes 100,1000,10000 --dataset all
+
+Quick smoke run (`--mode quick`) or the full dataset x size matrix (`--mode robust`):
+
+- Linux/macOS: ./benchmark --mode quick
+- Linux/macOS: ./benchmark --mode robust
+- Windows (MinGW): benchmark.exe --mode quick
+- Windows (MinGW): benchmark.exe --mode robust
+
+Flags passed after `--mode` override its defaults.
 
 Academic benchmark profile:
 
@@ -367,6 +380,7 @@ Dataset generation is centralized in `src/data/generator.c`.
 - `reversed`: descending sizes
 - `nearly_sorted`: ascending data with about 1% random swaps
 - `few_unique`: random values in a small `0..9` range, then shuffled
+- `organ_pipe`: ascending then descending (ramps up to the midpoint, then back down)
 - `all`: benchmark convenience mode that runs every concrete dataset type
 
 Validation uses sorted-order checks plus O(n) id-permutation validation, so the
@@ -379,8 +393,11 @@ old quadratic item-matching pass.
 - selection
 - insertion
 - quick
+- quick_naive: first-element-pivot quicksort, quadratic on sorted/reversed
+  input, kept alongside the hardened `quick` to show what pivot choice buys you
 - merge
 - heap
+- radix: LSD radix sort (base 256) over the sort key, with no comparisons
 
 ## Contributing
 
