@@ -36,7 +36,7 @@ void radix_sort(Image arr[], int n, Image temp[], Metrics *metrics) {
       count[i] += count[i - 1];
     }
 
-    for (int i = n - 1; i >= 0; i--) {
+    for (int i = n; i-- > 0;) {
       int digit = (radix_key(arr[i].size) >> shift) & 0xFF;
       temp[--count[digit]] = arr[i];
       metrics->movements++;
