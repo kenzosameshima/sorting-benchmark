@@ -61,6 +61,8 @@ const char *dataset_type_name(DatasetType type) {
       return "nearly_sorted";
     case DATASET_FEW_UNIQUE:
       return "few_unique";
+    case DATASET_ORGAN_PIPE:
+      return "organ_pipe";
     case DATASET_ALL:
       return "all";
     default:
@@ -83,6 +85,8 @@ int parse_dataset_type(const char *name, DatasetType *type) {
     *type = DATASET_NEARLY_SORTED;
   } else if (strcmp(name, "few_unique") == 0) {
     *type = DATASET_FEW_UNIQUE;
+  } else if (strcmp(name, "organ_pipe") == 0) {
+    *type = DATASET_ORGAN_PIPE;
   } else if (strcmp(name, "all") == 0) {
     *type = DATASET_ALL;
   } else {
@@ -143,6 +147,15 @@ static void generate_few_unique_images(Image images[], int n, Rng *rng) {
   shuffle_images(images, n, rng);
 }
 
+static void generate_organ_pipe_images(Image images[], int n) {
+  int half = n / 2;
+
+  initialize_ids(images, n);
+  for (int i = 0; i < n; i++) {
+    images[i].size = i < half ? i : n - i;
+  }
+}
+
 void generate_images(Image images[], int n, Rng *rng, DatasetType type) {
   if (n <= 0) {
     return;
@@ -163,6 +176,9 @@ void generate_images(Image images[], int n, Rng *rng, DatasetType type) {
       break;
     case DATASET_FEW_UNIQUE:
       generate_few_unique_images(images, n, rng);
+      break;
+    case DATASET_ORGAN_PIPE:
+      generate_organ_pipe_images(images, n);
       break;
     case DATASET_ALL:
       generate_random_images(images, n, rng);

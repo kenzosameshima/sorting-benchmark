@@ -1,0 +1,166 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Benchmark profile for the cross-platform run
+        type: choice
+        options: [smoke, quick, academic]
+        default: smoke
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Build with strict warnings as errors and run unit + golden-counter tests on
+  # every supported OS/compiler/option combination.
+  build-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-gcc, os: ubuntu-latest, cc: gcc, shell: bash, cmake_args: "" }
+          - { name: linux-clang, os: ubuntu-latest, cc: clang, shell: bash, cmake_args: "" }
+          - { name: linux-gcc-strict, os: ubuntu-latest, cc: gcc, shell: bash, cmake_args: "-DSB_STRICT=ON" }
+          - { name: linux-clang-strict, os: ubuntu-latest, cc: clang, shell: bash, cmake_args: "-DSB_STRICT=ON" }
+          - { name: linux-gcc-asan-ubsan, os: ubuntu-latest, cc: gcc, shell: bash, cmake_args: "-DSB_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug" }
+          - { name: windows-gcc, os: windows-latest, cc: gcc, shell: "msys2 {0}", cmake_args: "" }
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (UCRT64 gcc, CMake, Ninja, Python)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-python
+
+      - name: Install Ninja
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Configure
+        run: cmake -S . -B build/ci -G Ninja -DCMAKE_C_COMPILER=${{ matrix.cc }} ${{ matrix.cmake_args }}
+
+      - name: Build
+        run: cmake --build build/ci
+
+      - name: Test (unit, golden counters, smoke run)
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+        run: ctest --test-dir build/ci --output-on-failure
+
+  # Measure on each OS with the same seed and sizes. Timings on shared CI
+  # runners are noisy and only indicative; the deterministic counters are the
+  # hard cross-platform invariant checked by the compare job.
+  benchmark:
+    name: benchmark-${{ matrix.name }}
+    needs: build-test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-gcc, os: ubuntu-latest, shell: bash }
+          - { name: windows-gcc, os: windows-latest, shell: "msys2 {0}" }
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (UCRT64 gcc, CMake, Ninja, Python)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-python
+
+      - name: Install Ninja
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Build, test and run the benchmark
+        run: >-
+          python scripts/run_suite.py
+          --profile ${{ github.event.inputs.profile || 'smoke' }}
+          --label ${{ matrix.name }}
+          --cc gcc
+          --pin none
+
+      - name: Upload run
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-${{ matrix.name }}
+          path: runs/${{ matrix.name }}
+          if-no-files-found: error
+
+  # Cross-platform report. Fails if operation counters differ between OSes or
+  # any repetition was INVALID.
+  compare:
+    name: compare-platforms
+    needs: benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: run-*
+          path: runs
+
+      - name: Build report
+        run: |
+          python scripts/build_report.py runs/* \
+            --title "Sorting benchmark (CI)" \
+            --output report/report.html \
+            --markdown report/summary.md \
+            --fail-on-mismatch
+        continue-on-error: true
+        id: report
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f report/summary.md ]; then cat report/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report
+          path: report
+          if-no-files-found: warn
+
+      - name: Fail on counter mismatch
+        if: steps.report.outcome == 'failure'
+        run: |
+          echo "Operation counters differ across platforms or a repetition was INVALID." >&2
+          exit 1

@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__REPORT_TITLE__</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1b1f24; --muted: #59636e; --card: #f6f8fa; --line: #d1d9e0;
+  --accent: #0969da; --good: #1a7f37; --bad: #cf222e; --warn: #9a6700;
+  --faster: 37, 99, 235; --slower: 217, 70, 0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --card: #151b23; --line: #30363d;
+    --accent: #4493f8; --good: #3fb950; --bad: #f85149; --warn: #d29922;
+    --faster: 88, 150, 255; --slower: 255, 128, 60;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --card: #151b23; --line: #30363d;
+  --accent: #4493f8; --good: #3fb950; --bad: #f85149; --warn: #d29922;
+  --faster: 88, 150, 255; --slower: 255, 128, 60;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 36px 0 12px; }
+h3 { font-size: 15px; margin: 20px 0 8px; }
+p, li { max-width: 78ch; }
+.sub { color: var(--muted); margin: 0; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.card h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; font-size: 13px; }
+dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; }
+.chip { display: inline-block; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; color: var(--muted); background: var(--bg); }
+.chip.warn { color: var(--warn); border-color: var(--warn); }
+.chip.bad { color: var(--bad); border-color: var(--bad); }
+.chip.good { color: var(--good); border-color: var(--good); }
+ul.checks { list-style: none; padding: 0; margin: 0; }
+ul.checks li { padding: 6px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: baseline; max-width: none; }
+.ok { color: var(--good); font-weight: 600; } .fail { color: var(--bad); font-weight: 600; } .note { color: var(--warn); font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; margin-bottom: 12px; }
+.controls label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); gap: 3px; }
+select, button.toggle { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 6px 0 10px; }
+button.toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; padding: 3px 9px; }
+button.toggle[aria-pressed="false"] { opacity: .4; text-decoration: line-through; }
+button.toggle:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.chartbox { position: relative; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+svg.chart { display: block; width: 100%; height: auto; touch-action: pan-y; }
+svg text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+svg .grid { stroke: var(--line); stroke-width: 1; }
+svg .axis { stroke: var(--muted); stroke-width: 1; }
+svg .guide { stroke: var(--muted); stroke-dasharray: 3 3; }
+.tip { position: absolute; pointer-events: none; background: var(--bg); color: var(--fg); border: 1px solid var(--line); box-shadow: 0 4px 16px rgba(0,0,0,.18); border-radius: 8px; padding: 8px 10px; font-size: 12px; max-width: 320px; z-index: 5; }
+.tip b { font-weight: 600; } .tip .row { display: flex; gap: 6px; align-items: center; white-space: nowrap; } .tip .dim { color: var(--muted); }
+.hint { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; background: var(--card); }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--card); }
+td.sig { font-weight: 700; outline: 1px solid currentColor; outline-offset: -2px; }
+td.nosig { color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+.flag { margin-left: 4px; }
+details { border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; background: var(--card); }
+summary { cursor: pointer; font-weight: 600; }
+.empty { color: var(--muted); padding: 16px; }
+@media (max-width: 600px) { h1 { font-size: 20px; } .controls { gap: 10px; } }
+@media print { .controls, .legend button { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title">__REPORT_TITLE__</h1>
+  <p class="sub" id="subtitle"></p>
+
+  <h2>Runs</h2>
+  <div class="cards" id="runs"></div>
+
+  <h2>Integrity checks</h2>
+  <ul class="checks" id="checks"></ul>
+
+  <h2>Explore</h2>
+  <div class="controls">
+    <label>Dataset <select id="dataset"></select></label>
+    <label>Metric <select id="metric"></select></label>
+    <label>Y scale <select id="scale"><option value="log">logarithmic</option><option value="linear">linear</option></select></label>
+    <label>Error bars <select id="bars"><option value="on">on</option><option value="off">off</option></select></label>
+  </div>
+  <div class="legend" id="legend-alg" aria-label="Algorithms"></div>
+  <div class="legend" id="legend-run" aria-label="Runs"></div>
+  <div class="chartbox" id="chartbox">
+    <svg class="chart" id="chart" role="img" aria-label="Benchmark chart"></svg>
+    <div class="tip" id="tip" hidden></div>
+  </div>
+  <p class="hint" id="chart-hint"></p>
+
+  <div id="cross-section">
+    <h2>Run-to-run comparison</h2>
+    <div class="controls"><label>Reference run <select id="ref"></select></label></div>
+    <div id="cross"></div>
+  </div>
+
+  <h2>Data quality</h2>
+  <div class="controls">
+    <label>Show <select id="qfilter"><option value="all">all cells of the selected dataset</option><option value="flagged">only flagged cells</option></select></label>
+  </div>
+  <div class="tablewrap" id="quality"></div>
+
+  <h2>How to read this</h2>
+  <details open>
+    <summary>Methodology and known limitations</summary>
+    <ul id="notes">
+      <li><b>Times include instrumentation.</b> The comparison/swap/movement counters run inside the timed region, so measured times are
+        higher than the pure algorithm, by very different amounts per algorithm and per compiler (insertion and heap sort are the most affected).
+        Prefer the counters for machine-independent comparisons and use times mainly for shapes and trends.</li>
+      <li><b>Statistics</b> are recomputed from the per-repetition CSV: sample standard deviation, Student-t 95% CI of the mean,
+        and bootstrap 95% CIs (1000 resamples, fixed seed) for ratios of medians. <code>summary.csv</code> reports a population standard deviation and is not used.</li>
+      <li><b>Paired ratios.</b> Every algorithm sorts a copy of the same dataset in each repetition, so ratios against the baseline are computed per repetition.</li>
+      <li><b>Counters are deterministic.</b> With the same seed they must be identical on every OS and compiler; any difference is a bug, not noise.</li>
+      <li><b>Cross-OS time ratios</b> also mix compiler and libc differences unless both runs use the same compiler. WSL2 runs inside a VM.</li>
+      <li><b>Quality flags.</b> <i>noisy</i>: CV above the threshold; <i>cold start</i>: first repetition much slower than the rest (no warm-up in the benchmark);
+        <i>few reps</i>: too few repetitions for a reliable CI.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+"use strict";
+const DATA = /*__REPORT_DATA__*/null;
+
+/* ---------- helpers ---------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+function h(tag, attrs, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") node.className = v;
+    else if (k === "text") node.textContent = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v === true ? "" : v);
+  }
+  for (const child of children.flat(Infinity)) {
+    if (child === null || child === undefined || child === false) continue;
+    node.append(child.nodeType ? child : document.createTextNode(String(child)));
+  }
+  return node;
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+function s(tag, attrs, ...children) {
+  const node = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) if (v !== null && v !== undefined) node.setAttribute(k, v);
+  for (const child of children.flat(Infinity)) if (child) node.append(child.nodeType ? child : document.createTextNode(String(child)));
+  return node;
+}
+const cellKey = (alg, ds, size) => `${alg}|${ds}|${size}`;
+const nice3 = (x) => String(Number(x.toPrecision(3)));
+function fmtTime(sec) {
+  const a = Math.abs(sec);
+  if (a >= 1) return nice3(sec) + " s";
+  if (a >= 1e-3) return nice3(sec * 1e3) + " ms";
+  if (a >= 1e-6) return nice3(sec * 1e6) + " µs";
+  return nice3(sec * 1e9) + " ns";
+}
+function fmtNs(ns) {
+  const a = Math.abs(ns);
+  if (a >= 1e6) return nice3(ns / 1e6) + " ms";
+  if (a >= 1e3) return nice3(ns / 1e3) + " µs";
+  return nice3(ns) + " ns";
+}
+function fmtCount(v) {
+  const a = Math.abs(v);
+  if (a >= 1e9) return nice3(v / 1e9) + "G";
+  if (a >= 1e6) return nice3(v / 1e6) + "M";
+  if (a >= 1e3) return nice3(v / 1e3) + "k";
+  return nice3(v);
+}
+const fmtRatio = (v) => nice3(v) + "×";
+const fmtSize = (n) => (n >= 1e6 ? n / 1e6 + "M" : n >= 1e3 ? n / 1e3 + "k" : String(n));
+const pct = (v) => (v === null || v === undefined ? "–" : (v * 100).toFixed(1) + "%");
+
+const PALETTE = { bubble: "#E69F00", selection: "#56B4E9", insertion: "#009E73", quick: "#D55E00", quick_naive: "#F0A3A3", merge: "#0072B2", heap: "#CC79A7", radix: "#000000" };
+const EXTRA = ["#8c564b", "#7f7f7f", "#bcbd22", "#17becf"];
+const colorOf = (alg) => PALETTE[alg] || EXTRA[Math.abs([...alg].reduce((a, c) => a + c.charCodeAt(0), 0)) % EXTRA.length];
+const DASHES = ["", "7 4", "2 3", "9 3 2 3"];
+const MARKERS = ["circle", "square", "triangle", "diamond"];
+
+const METRICS = {
+  time_median: { label: "Time · median", fmt: fmtTime, bars: "interquartile range (Q1–Q3)",
+    get: (c) => ({ v: c.median, lo: c.q1, hi: c.q3 }) },
+  time_mean: { label: "Time · mean", fmt: fmtTime, bars: "95% CI of the mean",
+    get: (c) => ({ v: c.mean, lo: c.ci95 === null ? null : c.mean - c.ci95, hi: c.ci95 === null ? null : c.mean + c.ci95 }) },
+  ns_per_element: { label: "Time per element (median)", fmt: fmtNs, bars: "interquartile range (Q1–Q3)",
+    get: (c) => ({ v: c.median / c.size * 1e9, lo: c.q1 / c.size * 1e9, hi: c.q3 / c.size * 1e9 }) },
+  ns_per_nlogn: { label: "Time ÷ (n·log₂n) (median)", fmt: fmtNs, bars: "interquartile range (Q1–Q3)",
+    get: (c) => { const d = c.size * Math.log2(c.size); return { v: c.median / d * 1e9, lo: c.q1 / d * 1e9, hi: c.q3 / d * 1e9 }; } },
+  vs_baseline: { label: () => `Time relative to ${DATA.baseline} (paired median ratio)`, fmt: fmtRatio, bars: "bootstrap 95% CI",
+    get: (c) => (c.vs_baseline ? { v: c.vs_baseline.ratio, lo: c.vs_baseline.lo, hi: c.vs_baseline.hi } : null) },
+  comparisons: { label: "Comparisons (mean)", fmt: fmtCount, bars: null, get: (c) => ({ v: c.comparisons }) },
+  swaps: { label: "Swaps (mean)", fmt: fmtCount, bars: null, get: (c) => ({ v: c.swaps }) },
+  movements: { label: "Movements (mean)", fmt: fmtCount, bars: null, get: (c) => ({ v: c.movements }) },
+};
+const metricLabel = (m) => (typeof METRICS[m].label === "function" ? METRICS[m].label() : METRICS[m].label);
+
+const state = {
+  dataset: DATA.datasets[0], metric: "time_median", scale: "log", bars: true,
+  algs: new Set(DATA.algorithms), runs: new Set(DATA.runs.map((r) => r.index)), ref: 0,
+};
+
+/* ---------- header, runs, integrity ---------- */
+function renderHeader() {
+  document.title = DATA.title;
+  $("#title").textContent = DATA.title;
+  const sizes = DATA.sizes.map(fmtSize).join(", ");
+  $("#subtitle").textContent =
+    `${DATA.runs.length} run${DATA.runs.length > 1 ? "s" : ""} · ${DATA.algorithms.length} algorithms · ` +
+    `${DATA.datasets.length} dataset${DATA.datasets.length > 1 ? "s" : ""} · sizes ${sizes}`;
+}
+const bytesToGiB = (b) => (b ? (b / 2 ** 30).toFixed(1) + " GiB" : "?");
+function renderRuns() {
+  const root = $("#runs");
+  root.replaceChildren();
+  for (const run of DATA.runs) {
+    const info = run.info || {}, sys = info.system || {}, comp = info.compiler || {}, git = info.git || {}, pin = info.pinning || {};
+    const rows = [
+      ["CPU", sys.cpu_model ? `${sys.cpu_model} (${sys.logical_cpus} threads)` : null],
+      ["OS", sys.os ? `${sys.os}${sys.is_wsl ? " (WSL2)" : ""}` : null],
+      ["Memory", sys.memory_bytes ? bytesToGiB(sys.memory_bytes) : null],
+      ["Compiler", comp.banner || run.csv.compiler],
+      ["Target", comp.target],
+      ["Flags", run.csv.flags ? run.csv.flags.replaceAll("_", " ") : null],
+      ["Build", info.cmake ? `${info.cmake.build_type} · ${info.cmake.generator}` : null],
+      ["Pinning", pin.cpu !== undefined ? (pin.cpu === null ? "none" : `CPU ${pin.cpu} — ${pin.reason}`) : null],
+      ["Priority", info.priority],
+      ["Power", sys.power ? Object.values(sys.power)[0] : null],
+      ["Seed", run.csv.seed],
+      ["Command", info.benchmark_args ? "benchmark " + info.benchmark_args.join(" ") : null],
+      ["Started", info.started_at ? `${info.started_at} (${info.duration_seconds}s)` : null],
+      ["Commit", git.commit ? git.commit.slice(0, 10) + (git.dirty ? " + uncommitted changes" : "") : null],
+    ].filter((r) => r[1]);
+    root.append(h("div", { class: "card" },
+      h("h3", {}, run.name, run.invalid_rows ? h("span", { class: "chip bad", text: `${run.invalid_rows} invalid` }) : null),
+      h("dl", {}, rows.map(([k, v]) => [h("dt", { text: k }), h("dd", { text: v })])),
+      run.warnings.length ? h("div", { style: "margin-top:8px;display:flex;flex-wrap:wrap;gap:4px" },
+        run.warnings.map((w) => h("span", { class: "chip warn", title: w, text: w.length > 70 ? w.slice(0, 68) + "…" : w }))) : null));
+  }
+}
+function renderChecks() {
+  const root = $("#checks");
+  root.replaceChildren();
+  const add = (kind, text, detail) => root.append(h("li", {},
+    h("span", { class: kind === "ok" ? "ok" : kind === "fail" ? "fail" : "note", text: kind === "ok" ? "✓ pass" : kind === "fail" ? "✗ fail" : "! note" }),
+    h("span", {}, text, detail ? h("div", { class: "hint", text: detail }) : null)));
+  if (DATA.counter_checks.length === 0) add("note", "Single run: counters cannot be cross-checked against another platform. Add a second run to enable this check.");
+  for (const c of DATA.counter_checks) {
+    const a = DATA.runs[c.a].name, b = DATA.runs[c.b].name;
+    if (c.compared === 0) add("note", `${a} vs ${b}: no repetition in common to compare.`);
+    else if (c.mismatches === 0) add("ok", `Counters identical between ${a} and ${b}`, `${c.compared} repetitions compared (comparisons, swaps and movements match exactly): same datasets were sorted by the same algorithms.`);
+    else add("fail", `Counters differ between ${a} and ${b}: ${c.mismatches} of ${c.compared} repetitions`, c.examples.join(" · "));
+  }
+  for (const run of DATA.runs) {
+    if (run.invalid_rows) add("fail", `${run.name}: ${run.invalid_rows} repetition(s) produced an unsorted result or a corrupted permutation (INVALID).`);
+  }
+  if (DATA.runs.every((r) => !r.invalid_rows)) add("ok", "Every measured repetition passed validation (sorted output and id permutation).");
+  for (const w of DATA.warnings) add("note", w);
+}
+
+/* ---------- controls ---------- */
+function renderControls() {
+  const ds = $("#dataset"), mt = $("#metric");
+  ds.replaceChildren(...DATA.datasets.map((d) => h("option", { value: d, text: d })));
+  const metricKeys = Object.keys(METRICS).filter((m) => m !== "vs_baseline" || DATA.baseline);
+  mt.replaceChildren(...metricKeys.map((m) => h("option", { value: m, text: metricLabel(m) })));
+  ds.value = state.dataset; mt.value = state.metric;
+  ds.onchange = () => { state.dataset = ds.value; renderAll(); };
+  mt.onchange = () => { state.metric = mt.value; renderChart(); };
+  $("#scale").onchange = (e) => { state.scale = e.target.value; renderChart(); };
+  $("#bars").onchange = (e) => { state.bars = e.target.value === "on"; renderChart(); };
+  $("#qfilter").onchange = renderQuality;
+
+  const la = $("#legend-alg"), lr = $("#legend-run");
+  la.replaceChildren(...DATA.algorithms.map((alg) => toggle(
+    h("span", { class: "swatch", style: `background:${colorOf(alg)}` }), alg, state.algs, alg)));
+  lr.replaceChildren();
+  if (DATA.runs.length > 1) {
+    lr.append(...DATA.runs.map((run) => toggle(runGlyph(run.index), run.name, state.runs, run.index)));
+  }
+  const ref = $("#ref");
+  ref.replaceChildren(...DATA.runs.map((r) => h("option", { value: r.index, text: r.name })));
+  ref.value = String(state.ref);
+  ref.onchange = () => { state.ref = Number(ref.value); renderCross(); };
+  $("#cross-section").hidden = DATA.runs.length < 2;
+}
+function toggle(glyph, label, set, key) {
+  const btn = h("button", { class: "toggle", type: "button", "aria-pressed": "true" }, glyph, label);
+  btn.addEventListener("click", () => {
+    if (set.has(key)) { if (set.size > 1) set.delete(key); } else set.add(key);
+    btn.setAttribute("aria-pressed", set.has(key) ? "true" : "false");
+    renderChart(); renderQuality();
+  });
+  return btn;
+}
+function runGlyph(index) {
+  const svgNode = s("svg", { width: 34, height: 12, viewBox: "0 0 34 12" },
+    s("line", { x1: 0, y1: 6, x2: 34, y2: 6, stroke: "currentColor", "stroke-width": 2, "stroke-dasharray": DASHES[index % 4] || null }),
+    markerShape(MARKERS[index % 4], 17, 6, 3.5, "currentColor"));
+  return svgNode;
+}
+function markerShape(shape, x, y, r, color) {
+  switch (shape) {
+    case "square": return s("rect", { x: x - r, y: y - r, width: 2 * r, height: 2 * r, fill: color });
+    case "triangle": return s("path", { d: `M${x},${y - r * 1.25}L${x + r * 1.15},${y + r * 0.95}L${x - r * 1.15},${y + r * 0.95}Z`, fill: color });
+    case "diamond": return s("path", { d: `M${x},${y - r * 1.35}L${x + r * 1.35},${y}L${x},${y + r * 1.35}L${x - r * 1.35},${y}Z`, fill: color });
+    default: return s("circle", { cx: x, cy: y, r, fill: color });
+  }
+}
+
+/* ---------- chart ---------- */
+function logTicks(min, max) {
+  const out = [];
+  for (let e = Math.floor(Math.log10(min)); e <= Math.ceil(Math.log10(max)); e++)
+    for (const m of [1, 2, 5]) {
+      const v = m * 10 ** e;
+      if (v >= min / 1.0001 && v <= max * 1.0001) out.push({ v, major: m === 1 });
+    }
+  return out;
+}
+function linearTicks(min, max) {
+  const span = max - min, raw = span / 5, mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((k) => k >= raw) || mag * 10;
+  const out = [];
+  for (let v = Math.ceil(min / step) * step; v <= max + step * 1e-9; v += step) out.push({ v, major: true });
+  return out;
+}
+function collectSeries() {
+  const metric = METRICS[state.metric], series = [];
+  for (const run of DATA.runs) {
+    if (!state.runs.has(run.index)) continue;
+    for (const alg of DATA.algorithms) {
+      if (!state.algs.has(alg)) continue;
+      const pts = [];
+      for (const size of DATA.sizes) {
+        const cell = run.cells[cellKey(alg, state.dataset, size)];
+        const m = cell ? metric.get(cell) : null;
+        if (m && m.v !== null && Number.isFinite(m.v)) pts.push({ size, cell, ...m });
+      }
+      if (pts.length) series.push({ run, alg, pts });
+    }
+  }
+  return series;
+}
+let chartGeometry = null;
+function renderChart() {
+  const svg = $("#chart"), box = $("#chartbox");
+  const width = Math.max(320, box.clientWidth || 900), height = width < 560 ? 320 : 440;
+  const M = { l: 64, r: 16, t: 14, b: 40 };
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.replaceChildren();
+  const metric = METRICS[state.metric];
+  const series = collectSeries();
+  const log = state.scale === "log";
+  const showBars = state.bars && metric.bars;
+  $("#chart-hint").textContent = (metric.bars ? `Bars: ${state.bars ? metric.bars : "hidden"}. ` : "") +
+    (log ? "Points with a value of 0 cannot be drawn on a log axis. " : "") + "Hover or tap the chart for exact values.";
+  svg.setAttribute("aria-label", `${metricLabel(state.metric)} by input size, dataset ${state.dataset}`);
+  if (!series.length) { svg.append(s("text", { x: width / 2, y: height / 2, "text-anchor": "middle" }, "No data for this selection")); chartGeometry = null; return; }
+
+  const values = [];
+  for (const sr of series) for (const p of sr.pts) {
+    values.push(p.v);
+    if (showBars && p.lo !== null && p.lo !== undefined) values.push(p.lo, p.hi);
+  }
+  let lo, hi;
+  if (log) {
+    const positive = values.filter((v) => v > 0);
+    if (!positive.length) { svg.append(s("text", { x: width / 2, y: height / 2, "text-anchor": "middle" }, "All values are zero: switch to a linear scale")); chartGeometry = null; return; }
+    lo = Math.min(...positive) / 1.25; hi = Math.max(...positive) * 1.25;
+  } else {
+    lo = 0; hi = Math.max(...values) * 1.08 || 1;
+  }
+  const sizes = DATA.sizes;
+  const x0 = Math.log10(sizes[0]), x1 = Math.log10(sizes[sizes.length - 1]);
+  const px = (size) => M.l + (sizes.length === 1 ? 0.5 : (Math.log10(size) - x0) / (x1 - x0 || 1)) * (width - M.l - M.r);
+  const py = (v) => (log
+    ? M.t + (1 - (Math.log10(v) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo))) * (height - M.t - M.b)
+    : M.t + (1 - (v - lo) / (hi - lo)) * (height - M.t - M.b));
+
+  const ticks = log ? logTicks(lo, hi) : linearTicks(lo, hi);
+  const labelAll = ticks.length <= 12;
+  for (const t of ticks) {
+    const y = py(t.v);
+    if (y < M.t - 1 || y > height - M.b + 1) continue;
+    svg.append(s("line", { class: "grid", x1: M.l, x2: width - M.r, y1: y, y2: y, opacity: t.major ? 1 : 0.45 }));
+    if (t.major || labelAll) svg.append(s("text", { x: M.l - 8, y: y + 4, "text-anchor": "end" }, metric.fmt(t.v)));
+  }
+  for (const size of sizes) {
+    const x = px(size);
+    svg.append(s("line", { class: "grid", x1: x, x2: x, y1: M.t, y2: height - M.b, opacity: 0.45 }));
+    svg.append(s("text", { x, y: height - M.b + 16, "text-anchor": "middle" }, fmtSize(size)));
+  }
+  svg.append(s("line", { class: "axis", x1: M.l, x2: width - M.r, y1: height - M.b, y2: height - M.b }));
+  svg.append(s("line", { class: "axis", x1: M.l, x2: M.l, y1: M.t, y2: height - M.b }));
+  svg.append(s("text", { x: (M.l + width - M.r) / 2, y: height - 6, "text-anchor": "middle" }, "input size (n)"));
+
+  for (const sr of series) {
+    const color = colorOf(sr.alg), dash = DASHES[sr.run.index % 4], marker = MARKERS[sr.run.index % 4];
+    const drawable = sr.pts.filter((p) => !log || p.v > 0);
+    if (drawable.length > 1) {
+      const d = drawable.map((p, i) => `${i ? "L" : "M"}${px(p.size).toFixed(1)},${py(p.v).toFixed(1)}`).join("");
+      svg.append(s("path", { d, fill: "none", stroke: color, "stroke-width": 2, "stroke-dasharray": dash || null, "stroke-linejoin": "round" }));
+    }
+    for (const p of drawable) {
+      const x = px(p.size);
+      if (showBars && p.lo !== null && p.lo !== undefined && (!log || p.lo > 0)) {
+        const y1 = py(p.hi), y2 = py(p.lo);
+        svg.append(s("path", { d: `M${x},${y1}L${x},${y2}M${x - 3},${y1}L${x + 3},${y1}M${x - 3},${y2}L${x + 3},${y2}`, stroke: color, "stroke-width": 1.2, fill: "none", opacity: 0.8 }));
+      }
+      svg.append(markerShape(marker, x, py(p.v), 3.6, color));
+    }
+  }
+  const guide = s("line", { class: "guide", y1: M.t, y2: height - M.b, visibility: "hidden" });
+  const overlay = s("rect", { x: M.l, y: M.t, width: width - M.l - M.r, height: height - M.t - M.b, fill: "transparent" });
+  svg.append(guide, overlay);
+  chartGeometry = { px, py, width, height, series, guide, overlay, metric };
+  const onMove = (event) => showTip(event, box);
+  overlay.addEventListener("pointermove", onMove);
+  overlay.addEventListener("pointerdown", onMove);
+  overlay.addEventListener("pointerleave", () => { $("#tip").hidden = true; guide.setAttribute("visibility", "hidden"); });
+}
+function showTip(event, box) {
+  const g = chartGeometry; if (!g) return;
+  const rect = $("#chart").getBoundingClientRect();
+  const scale = g.width / rect.width;
+  const mx = (event.clientX - rect.left) * scale;
+  let best = DATA.sizes[0], dist = Infinity;
+  for (const size of DATA.sizes) { const d = Math.abs(g.px(size) - mx); if (d < dist) { dist = d; best = size; } }
+  g.guide.setAttribute("x1", g.px(best)); g.guide.setAttribute("x2", g.px(best)); g.guide.setAttribute("visibility", "visible");
+  const rows = [];
+  for (const sr of g.series) {
+    const p = sr.pts.find((q) => q.size === best);
+    if (p) rows.push({ sr, p });
+  }
+  rows.sort((a, b) => a.p.v - b.p.v);
+  const tip = $("#tip");
+  tip.replaceChildren(
+    h("div", { class: "dim", text: `${state.dataset} · n = ${best.toLocaleString("en-US")}` }),
+    ...rows.map(({ sr, p }) => h("div", { class: "row" },
+      h("span", { class: "swatch", style: `background:${colorOf(sr.alg)}` }),
+      h("b", { text: sr.alg }),
+      DATA.runs.length > 1 ? h("span", { class: "dim", text: sr.run.name }) : null,
+      h("span", { text: g.metric.fmt(p.v) }),
+      h("span", { class: "dim", text: `n=${p.cell.n}${p.cell.cv !== null ? ` · CV ${pct(p.cell.cv)}` : ""}` }))));
+  tip.hidden = false;
+  const boxRect = box.getBoundingClientRect();
+  let left = event.clientX - boxRect.left + 14, top = event.clientY - boxRect.top + 12;
+  if (left + tip.offsetWidth > boxRect.width - 4) left = event.clientX - boxRect.left - tip.offsetWidth - 14;
+  if (top + tip.offsetHeight > boxRect.height - 4) top = Math.max(4, boxRect.height - tip.offsetHeight - 4);
+  tip.style.left = Math.max(4, left) + "px"; tip.style.top = top + "px";
+}
+
+/* ---------- run-to-run comparison ---------- */
+function renderCross() {
+  const root = $("#cross");
+  root.replaceChildren();
+  if (DATA.runs.length < 2) return;
+  const ref = state.ref;
+  for (const other of DATA.runs) {
+    if (other.index === ref) continue;
+    const cells = DATA.cross[`${ref}>${other.index}`] || {};
+    const head1 = h("tr", {}, h("th", { rowspan: 2, text: "algorithm" }),
+      DATA.datasets.map((d) => h("th", { colspan: DATA.sizes.length, text: d, style: "text-align:center;border-left:1px solid var(--line)" })));
+    const head2 = h("tr", {}, DATA.datasets.map(() => DATA.sizes.map((n, i) => h("th", { text: fmtSize(n), style: i === 0 ? "border-left:1px solid var(--line)" : "" }))));
+    const body = DATA.algorithms.map((alg) => h("tr", {},
+      h("td", { text: alg }),
+      DATA.datasets.map((ds) => DATA.sizes.map((size, i) => {
+        const c = cells[cellKey(alg, ds, size)];
+        const border = i === 0 ? "border-left:1px solid var(--line);" : "";
+        if (!c || c.ratio === null) return h("td", { class: "nosig", style: border, text: "–" });
+        const magnitude = Math.min(1, Math.abs(Math.log2(c.ratio)));
+        const rgb = c.ratio < 1 ? "var(--faster)" : "var(--slower)";
+        const ci = c.lo !== null ? ` (95% CI ${nice3(c.lo)}–${nice3(c.hi)})` : " (too few repetitions for a CI)";
+        return h("td", {
+          class: c.significant ? "sig" : "nosig",
+          style: `${border}background:rgba(${rgb},${(magnitude * 0.55).toFixed(2)})`,
+          title: `${alg} · ${ds} · n=${size}: ${nice3(c.ratio)}×${ci}${c.significant ? " — significant" : " — not distinguishable from 1×"}` +
+            (c.counters_equal === false ? " — COUNTERS DIFFER" : ""),
+        }, fmtRatio(c.ratio), c.counters_equal === false ? h("span", { class: "flag fail", text: "✗" }) : null);
+      }))));
+    root.append(
+      h("h3", {}, `${other.name} ÷ ${DATA.runs[ref].name}`),
+      h("div", { class: "tablewrap" }, h("table", {}, h("thead", {}, head1, head2), h("tbody", {}, body))),
+      h("p", { class: "hint", text: "Ratio of median times (values below 1× mean the run named first is faster). Bold with outline: the bootstrap 95% CI excludes 1×. Muted: not distinguishable from noise. Shading saturates at 2× / 0.5×. ✗: operation counters differ between the runs." }));
+  }
+}
+
+/* ---------- data quality ---------- */
+function flagsOf(c) {
+  const t = DATA.thresholds, out = [];
+  if (c.cv !== null && c.cv > t.cv) out.push(["noisy", "warn"]);
+  if (c.first_ratio !== null && c.first_ratio > t.first_rep) out.push(["cold start", "warn"]);
+  if (c.n < t.min_reps) out.push(["few reps", "warn"]);
+  if (c.invalid) out.push([`${c.invalid} invalid`, "bad"]);
+  return out;
+}
+function renderQuality() {
+  const only = $("#qfilter").value === "flagged";
+  const rows = [];
+  for (const run of DATA.runs) {
+    if (!state.runs.has(run.index)) continue;
+    for (const size of DATA.sizes) for (const alg of DATA.algorithms) {
+      const c = run.cells[cellKey(alg, state.dataset, size)];
+      if (!c) continue;
+      const flags = flagsOf(c);
+      if (only && !flags.length) continue;
+      rows.push(h("tr", {},
+        h("td", { text: DATA.runs.length > 1 ? `${alg} · ${run.name}` : alg }),
+        h("td", { text: fmtSize(size) }), h("td", { text: c.n }),
+        h("td", { text: fmtTime(c.median) }),
+        h("td", { text: c.ci95 === null ? fmtTime(c.mean) : `${fmtTime(c.mean)} ± ${fmtTime(c.ci95)}` }),
+        h("td", { text: pct(c.cv) }),
+        h("td", { text: c.first_ratio === null ? "–" : nice3(c.first_ratio) + "×" }),
+        h("td", { style: "text-align:left" }, flags.map(([label, kind]) => h("span", { class: `chip ${kind} flag`, text: label })))));
+    }
+  }
+  const root = $("#quality");
+  root.replaceChildren();
+  if (!rows.length) { root.append(h("div", { class: "empty", text: only ? "No flagged cells for this selection." : "No data." })); return; }
+  root.append(h("table", {},
+    h("thead", {}, h("tr", {}, ["algorithm", "n", "reps", "median", "mean ± 95% CI", "CV", "1st rep ÷ rest", "flags"].map((t, i) => h("th", { text: t, style: i === 7 ? "text-align:left" : "" })))),
+    h("tbody", {}, rows)));
+}
+
+/* ---------- boot ---------- */
+function renderAll() { renderChart(); renderCross(); renderQuality(); }
+renderHeader(); renderRuns(); renderChecks(); renderControls(); renderAll();
+if (typeof ResizeObserver !== "undefined") {
+  let last = 0;
+  new ResizeObserver(() => { const w = $("#chartbox").clientWidth; if (Math.abs(w - last) > 1) { last = w; renderChart(); } }).observe($("#chartbox"));
+}
+</script>
+</body>
+</html>

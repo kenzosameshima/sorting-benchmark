@@ -35,9 +35,14 @@ static int parse_int_arg(const char *value, int *out) {
 
 static void print_usage(const char *program) {
   fprintf(stderr,
-          "Uso: %s [--seed NUMERO] [--repetitions N] [--max-size N] "
-          "[--skip-quadratic-after N] [--dataset TIPO] [--sizes A,B,C]\n"
-          "Datasets: random, sorted, reversed, nearly_sorted, few_unique, all\n",
+          "Uso: %s [--mode quick|robust] [--seed NUMERO] [--repetitions N] "
+          "[--max-size N] [--skip-quadratic-after N] [--dataset TIPO] "
+          "[--sizes A,B,C]\n"
+          "Datasets: random, sorted, reversed, nearly_sorted, few_unique, "
+          "organ_pipe, all\n"
+          "--mode quick: random dataset only, small sizes, fast smoke run.\n"
+          "--mode robust: all dataset types, full size range.\n"
+          "Flags passed after --mode override its defaults.\n",
           program);
 }
 
@@ -88,7 +93,30 @@ int main(int argc, char *argv[]) {
   };
 
   for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "--seed") == 0) {
+    if (strcmp(argv[i], "--mode") == 0) {
+      static const int quick_sizes[] = {100, 1000, 5000};
+      static const int robust_sizes[] = {100, 1000, 10000, 100000};
+
+      if (i + 1 >= argc) {
+        print_usage(argv[0]);
+        return 1;
+      }
+      if (strcmp(argv[i + 1], "quick") == 0) {
+        config.dataset_type = DATASET_RANDOM;
+        config.sizes = quick_sizes;
+        config.size_count = (int)(sizeof(quick_sizes) / sizeof(quick_sizes[0]));
+        config.repetitions = 5;
+        config.skip_quadratic_after = 5000;
+      } else if (strcmp(argv[i + 1], "robust") == 0) {
+        config.dataset_type = DATASET_ALL;
+        config.sizes = robust_sizes;
+        config.size_count = (int)(sizeof(robust_sizes) / sizeof(robust_sizes[0]));
+      } else {
+        print_usage(argv[0]);
+        return 1;
+      }
+      i++;
+    } else if (strcmp(argv[i], "--seed") == 0) {
       if (i + 1 >= argc || !parse_uint32_arg(argv[i + 1], &config.seed)) {
         print_usage(argv[0]);
         return 1;

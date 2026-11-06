@@ -20,6 +20,11 @@ static void run_quick(Image arr[], int n, Image temp[], Metrics *metrics) {
   quick_sort(arr, n, metrics);
 }
 
+static void run_quick_naive(Image arr[], int n, Image temp[], Metrics *metrics) {
+  (void)temp;
+  quick_sort_naive(arr, n, metrics);
+}
+
 static void run_merge(Image arr[], int n, Image temp[], Metrics *metrics) {
   merge_sort(arr, n, temp, metrics);
 }
@@ -29,14 +34,20 @@ static void run_heap(Image arr[], int n, Image temp[], Metrics *metrics) {
   heap_sort(arr, n, metrics);
 }
 
+static void run_radix(Image arr[], int n, Image temp[], Metrics *metrics) {
+  radix_sort(arr, n, temp, metrics);
+}
+
 const SortAlgorithm *get_sort_algorithms(size_t *count) {
   static const SortAlgorithm algorithms[] = {
     {"bubble", "Quadratic adjacent-swap stable sort", run_bubble, 1, 1, 0},
     {"selection", "Quadratic minimum-selection in-place sort", run_selection, 1, 0, 0},
     {"insertion", "Quadratic stable insertion sort", run_insertion, 1, 1, 0},
     {"quick", "Median-of-three three-way quicksort", run_quick, 0, 0, 0},
+    {"quick_naive", "First-element-pivot quicksort, quadratic on sorted/reversed input", run_quick_naive, 1, 0, 0},
     {"merge", "Stable top-down merge sort with external buffer", run_merge, 0, 1, 1},
-    {"heap", "In-place binary heap sort", run_heap, 0, 0, 0}
+    {"heap", "In-place binary heap sort", run_heap, 0, 0, 0},
+    {"radix", "LSD radix sort (base 256) over the sort key", run_radix, 0, 1, 1}
   };
 
   if (count) {

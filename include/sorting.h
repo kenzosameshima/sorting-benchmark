@@ -14,7 +14,9 @@ void bubble_sort(Image arr[], int n, Metrics *metrics);
 void selection_sort(Image arr[], int n, Metrics *metrics);
 void insertion_sort(Image arr[], int n, Metrics *metrics);
 void quick_sort(Image arr[], int n, Metrics *metrics);
+void quick_sort_naive(Image arr[], int n, Metrics *metrics);
 void merge_sort(Image arr[], int n, Image temp[], Metrics *metrics);
 void heap_sort(Image arr[], int n, Metrics *metrics);
+void radix_sort(Image arr[], int n, Image temp[], Metrics *metrics);
 
 #endif

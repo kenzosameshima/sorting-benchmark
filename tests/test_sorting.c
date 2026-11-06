@@ -1,5 +1,7 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "csv_writer.h"
 #include "generator.h"
@@ -185,6 +187,154 @@ static int test_csv_writer_module(void) {
   return 1;
 }
 
+
+/*
+ * Golden counters: comparisons/swaps/movements are deterministic functions of
+ * (algorithm, dataset, size, seed). They were captured with seed 42 and are
+ * identical on Windows (MinGW gcc 15), Ubuntu (gcc 13) and clang, so any
+ * mismatch means an algorithm, counter, or RNG/generator change.
+ * Regenerate deliberately (and review the diff) when one of those changes.
+ */
+#define GOLDEN_SEED 42U
+
+typedef struct {
+  const char *algorithm;
+  DatasetType dataset;
+  int size;
+  uint64_t comparisons;
+  uint64_t swaps;
+  uint64_t movements;
+} GoldenCounters;
+
+static const GoldenCounters golden_counters[] = {
+  {"bubble", DATASET_RANDOM, 100, 4950U, 2321U, 6963U},
+  {"selection", DATASET_RANDOM, 100, 4950U, 94U, 282U},
+  {"insertion", DATASET_RANDOM, 100, 2418U, 0U, 2519U},
+  {"quick", DATASET_RANDOM, 100, 1118U, 528U, 1642U},
+  {"merge", DATASET_RANDOM, 100, 539U, 0U, 1344U},
+  {"heap", DATASET_RANDOM, 100, 1018U, 581U, 1743U},
+  {"bubble", DATASET_SORTED, 100, 4950U, 0U, 0U},
+  {"selection", DATASET_SORTED, 100, 4950U, 0U, 0U},
+  {"insertion", DATASET_SORTED, 100, 99U, 0U, 198U},
+  {"quick", DATASET_SORTED, 100, 1619U, 738U, 2270U},
+  {"merge", DATASET_SORTED, 100, 356U, 0U, 1344U},
+  {"heap", DATASET_SORTED, 100, 1081U, 640U, 1920U},
+  {"bubble", DATASET_REVERSED, 100, 4950U, 4950U, 14850U},
+  {"selection", DATASET_REVERSED, 100, 4950U, 50U, 150U},
+  {"insertion", DATASET_REVERSED, 100, 4950U, 0U, 5148U},
+  {"quick", DATASET_REVERSED, 100, 1348U, 624U, 1931U},
+  {"merge", DATASET_REVERSED, 100, 316U, 0U, 1344U},
+  {"heap", DATASET_REVERSED, 100, 944U, 516U, 1548U},
+  {"bubble", DATASET_NEARLY_SORTED, 100, 4950U, 31U, 93U},
+  {"selection", DATASET_NEARLY_SORTED, 100, 4950U, 1U, 3U},
+  {"insertion", DATASET_NEARLY_SORTED, 100, 130U, 0U, 229U},
+  {"quick", DATASET_NEARLY_SORTED, 100, 1624U, 739U, 2274U},
+  {"merge", DATASET_NEARLY_SORTED, 100, 371U, 0U, 1344U},
+  {"heap", DATASET_NEARLY_SORTED, 100, 1084U, 639U, 1917U},
+  {"bubble", DATASET_FEW_UNIQUE, 100, 4950U, 2128U, 6384U},
+  {"selection", DATASET_FEW_UNIQUE, 100, 4950U, 90U, 270U},
+  {"insertion", DATASET_FEW_UNIQUE, 100, 2226U, 0U, 2326U},
+  {"quick", DATASET_FEW_UNIQUE, 100, 605U, 251U, 763U},
+  {"merge", DATASET_FEW_UNIQUE, 100, 537U, 0U, 1344U},
+  {"heap", DATASET_FEW_UNIQUE, 100, 999U, 544U, 1632U},
+  {"bubble", DATASET_RANDOM, 1000, 499500U, 247908U, 743724U},
+  {"selection", DATASET_RANDOM, 1000, 499500U, 992U, 2976U},
+  {"insertion", DATASET_RANDOM, 1000, 248897U, 0U, 249906U},
+  {"quick", DATASET_RANDOM, 1000, 17245U, 9362U, 28633U},
+  {"merge", DATASET_RANDOM, 1000, 8699U, 0U, 19952U},
+  {"heap", DATASET_RANDOM, 1000, 16827U, 9083U, 27249U},
+  {"bubble", DATASET_SORTED, 1000, 499500U, 0U, 0U},
+  {"selection", DATASET_SORTED, 1000, 499500U, 0U, 0U},
+  {"insertion", DATASET_SORTED, 1000, 999U, 0U, 1998U},
+  {"quick", DATASET_SORTED, 1000, 48079U, 23494U, 71059U},
+  {"merge", DATASET_SORTED, 1000, 5044U, 0U, 19952U},
+  {"heap", DATASET_SORTED, 1000, 17583U, 9708U, 29124U},
+  {"bubble", DATASET_REVERSED, 1000, 499500U, 499500U, 1498500U},
+  {"selection", DATASET_REVERSED, 1000, 499500U, 500U, 1500U},
+  {"insertion", DATASET_REVERSED, 1000, 499500U, 0U, 501498U},
+  {"quick", DATASET_REVERSED, 1000, 36487U, 18152U, 55030U},
+  {"merge", DATASET_REVERSED, 1000, 4932U, 0U, 19952U},
+  {"heap", DATASET_REVERSED, 1000, 15965U, 8316U, 24948U},
+  {"bubble", DATASET_NEARLY_SORTED, 1000, 499500U, 5740U, 17220U},
+  {"selection", DATASET_NEARLY_SORTED, 1000, 499500U, 10U, 30U},
+  {"insertion", DATASET_NEARLY_SORTED, 1000, 6739U, 0U, 7738U},
+  {"quick", DATASET_NEARLY_SORTED, 1000, 24999U, 12352U, 37625U},
+  {"merge", DATASET_NEARLY_SORTED, 1000, 6779U, 0U, 19952U},
+  {"heap", DATASET_NEARLY_SORTED, 1000, 17571U, 9684U, 29052U},
+  {"bubble", DATASET_FEW_UNIQUE, 1000, 499500U, 222170U, 666510U},
+  {"selection", DATASET_FEW_UNIQUE, 1000, 499500U, 901U, 2703U},
+  {"insertion", DATASET_FEW_UNIQUE, 1000, 223167U, 0U, 224168U},
+  {"quick", DATASET_FEW_UNIQUE, 1000, 4940U, 2008U, 6034U},
+  {"merge", DATASET_FEW_UNIQUE, 1000, 8503U, 0U, 19952U},
+  {"heap", DATASET_FEW_UNIQUE, 1000, 15927U, 8363U, 25089U},
+};
+
+static const SortAlgorithm *find_sort_algorithm(const char *name) {
+  size_t count = 0U;
+  const SortAlgorithm *algorithms = get_sort_algorithms(&count);
+
+  for (size_t i = 0; i < count; i++) {
+    if (strcmp(algorithms[i].name, name) == 0) {
+      return &algorithms[i];
+    }
+  }
+
+  return NULL;
+}
+
+static int check_golden_entry(const GoldenCounters *golden) {
+  const SortAlgorithm *sorter = find_sort_algorithm(golden->algorithm);
+  Metrics metrics;
+  Rng rng;
+  Image *images = malloc((size_t)golden->size * sizeof(Image));
+  Image *temp = malloc((size_t)golden->size * sizeof(Image));
+  int ok = 0;
+
+  if (sorter && images && temp) {
+    rng_seed(&rng, GOLDEN_SEED);
+    generate_images(images, golden->size, &rng, golden->dataset);
+    sorter->sort(images, golden->size, temp, &metrics);
+
+    ok = validate_sorted_images(images, golden->size) &&
+         metrics.comparisons == golden->comparisons &&
+         metrics.swaps == golden->swaps &&
+         metrics.movements == golden->movements;
+
+    if (!ok) {
+      fprintf(stderr,
+              "Falha golden: %s/%s n=%d esperado cmp=%" PRIu64 " swp=%" PRIu64 " mov=%" PRIu64
+              " obtido cmp=%" PRIu64 " swp=%" PRIu64 " mov=%" PRIu64 ".\n",
+              golden->algorithm,
+              dataset_type_name(golden->dataset),
+              golden->size,
+              golden->comparisons,
+              golden->swaps,
+              golden->movements,
+              metrics.comparisons,
+              metrics.swaps,
+              metrics.movements);
+    }
+  } else {
+    fprintf(stderr, "Falha golden: algoritmo '%s' ausente ou sem memoria.\n", golden->algorithm);
+  }
+
+  free(images);
+  free(temp);
+  return ok;
+}
+
+static int test_golden_counters(void) {
+  int failures = 0;
+
+  for (size_t i = 0; i < sizeof(golden_counters) / sizeof(golden_counters[0]); i++) {
+    if (!check_golden_entry(&golden_counters[i])) {
+      failures++;
+    }
+  }
+
+  return failures == 0;
+}
+
 int main(void) {
   static const int single[] = {42};
   static const int sorted[] = {1, 2, 3, 4, 5, 6};
@@ -245,6 +395,11 @@ int main(void) {
 
   if (!test_csv_writer_module()) {
     fprintf(stderr, "Falha: modulo csv_writer.\n");
+    failures++;
+  }
+
+  if (!test_golden_counters()) {
+    fprintf(stderr, "Falha: contadores golden divergentes.\n");
     failures++;
   }
 
