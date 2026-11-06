@@ -3,13 +3,13 @@
 
 #include "metrics.h"
 
-// Struct para simular imagens de satelite
+// Struct simulating satellite images
 typedef struct {
   int id;
-  int size;  // criterio de ordenacao
+  int size;  // sort key
 } Image;
 
-// Prototipos dos algoritmos
+// Algorithm prototypes
 void bubble_sort(Image arr[], int n, Metrics *metrics);
 void selection_sort(Image arr[], int n, Metrics *metrics);
 void insertion_sort(Image arr[], int n, Metrics *metrics);

@@ -99,7 +99,7 @@ static int run_size(const BenchmarkConfig *config,
   AlgorithmResult *results = checked_malloc_array((size_t)algorithm_count, sizeof(*results));
 
   if (!base_dataset || !work_array || !temp_buffer || !results) {
-    fprintf(stderr, "Erro ao alocar memoria para benchmark (n=%d).\n", n);
+    fprintf(stderr, "Failed to allocate memory for benchmark (n=%d).\n", n);
     free(base_dataset);
     free(work_array);
     free(temp_buffer);
@@ -108,7 +108,7 @@ static int run_size(const BenchmarkConfig *config,
   }
 
   if (!initialize_algorithm_results(results, algorithm_count, repetitions)) {
-    fprintf(stderr, "Erro ao alocar resultados para benchmark (n=%d).\n", n);
+    fprintf(stderr, "Failed to allocate benchmark results (n=%d).\n", n);
     free(base_dataset);
     free(work_array);
     free(temp_buffer);
@@ -122,7 +122,7 @@ static int run_size(const BenchmarkConfig *config,
     }
   }
 
-  printf("Executando dataset=%s n=%d com %d repeticoes e seed %" PRIu32 "...\n",
+  printf("Running dataset=%s n=%d with %d repetitions and seed %" PRIu32 "...\n",
          dataset_name,
          n,
          repetitions,
@@ -156,7 +156,7 @@ static int run_size(const BenchmarkConfig *config,
 
       if (!validate_sorted_images(work_array, n)) {
         fprintf(stderr,
-                "Falha na validacao: %s (dataset=%s, n=%d, repeticao=%d).\n",
+                "Validation failed: %s (dataset=%s, n=%d, repetition=%d).\n",
                 algorithms[a].name,
                 dataset_name,
                 n,
