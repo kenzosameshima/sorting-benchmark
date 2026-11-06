@@ -219,7 +219,8 @@ void run_experiments(const BenchmarkConfig *config) {
     DATASET_SORTED,
     DATASET_REVERSED,
     DATASET_NEARLY_SORTED,
-    DATASET_FEW_UNIQUE
+    DATASET_FEW_UNIQUE,
+    DATASET_ORGAN_PIPE
   };
   const int *sizes = config->sizes ? config->sizes : default_sizes;
   int size_count = config->sizes ? config->size_count :
