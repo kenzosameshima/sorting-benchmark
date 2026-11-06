@@ -267,6 +267,16 @@ static const GoldenCounters golden_counters[] = {
   {"quick", DATASET_FEW_UNIQUE, 1000, 4940U, 2008U, 6034U},
   {"merge", DATASET_FEW_UNIQUE, 1000, 8503U, 0U, 19952U},
   {"heap", DATASET_FEW_UNIQUE, 1000, 15927U, 8363U, 25089U},
+  {"shell", DATASET_RANDOM, 100, 772U, 0U, 1162U},
+  {"shell", DATASET_SORTED, 100, 342U, 0U, 684U},
+  {"shell", DATASET_REVERSED, 100, 500U, 0U, 914U},
+  {"shell", DATASET_NEARLY_SORTED, 100, 361U, 0U, 703U},
+  {"shell", DATASET_FEW_UNIQUE, 100, 532U, 0U, 905U},
+  {"shell", DATASET_RANDOM, 1000, 13729U, 0U, 19616U},
+  {"shell", DATASET_SORTED, 1000, 5457U, 0U, 10914U},
+  {"shell", DATASET_REVERSED, 1000, 8550U, 0U, 14834U},
+  {"shell", DATASET_NEARLY_SORTED, 1000, 7953U, 0U, 13420U},
+  {"shell", DATASET_FEW_UNIQUE, 1000, 8247U, 0U, 14019U},
 };
 
 static const SortAlgorithm *find_sort_algorithm(const char *name) {
