@@ -115,7 +115,11 @@ static int test_dataset_generation(void) {
     DATASET_SORTED,
     DATASET_REVERSED,
     DATASET_NEARLY_SORTED,
-    DATASET_FEW_UNIQUE
+    DATASET_FEW_UNIQUE,
+    DATASET_ORGAN_PIPE,
+    DATASET_SAWTOOTH,
+    DATASET_ZIPF,
+    DATASET_WIDE_RANGE
   };
   Rng rng;
   Image images[128];
@@ -140,8 +144,41 @@ static int test_dataset_parse(void) {
          parse_dataset_type("reversed", &type) && type == DATASET_REVERSED &&
          parse_dataset_type("nearly_sorted", &type) && type == DATASET_NEARLY_SORTED &&
          parse_dataset_type("few_unique", &type) && type == DATASET_FEW_UNIQUE &&
+         parse_dataset_type("organ_pipe", &type) && type == DATASET_ORGAN_PIPE &&
+         parse_dataset_type("sawtooth", &type) && type == DATASET_SAWTOOTH &&
+         parse_dataset_type("zipf", &type) && type == DATASET_ZIPF &&
+         parse_dataset_type("wide_range", &type) && type == DATASET_WIDE_RANGE &&
          parse_dataset_type("all", &type) && type == DATASET_ALL &&
          !parse_dataset_type("missing", &type);
+}
+
+static int test_dataset_export(void) {
+  const char *path = "./zipf_5.csv";
+  Image images[5];
+  char line[64];
+  int lines = 0;
+  FILE *file;
+
+  for (int i = 0; i < 5; i++) {
+    images[i].id = i;
+    images[i].size = 10 * i;
+  }
+
+  if (!write_dataset_csv(".", "zipf", 5, images)) {
+    return 0;
+  }
+
+  file = fopen(path, "r");
+  if (!file) {
+    return 0;
+  }
+  while (fgets(line, sizeof(line), file)) {
+    lines++;
+  }
+  fclose(file);
+  remove(path);
+
+  return lines == 6;  /* header + 5 rows */
 }
 
 static int almost_equal(double left, double right) {
@@ -277,6 +314,18 @@ static const GoldenCounters golden_counters[] = {
   {"shell", DATASET_REVERSED, 1000, 8550U, 0U, 14834U},
   {"shell", DATASET_NEARLY_SORTED, 1000, 7953U, 0U, 13420U},
   {"shell", DATASET_FEW_UNIQUE, 1000, 8247U, 0U, 14019U},
+  {"insertion", DATASET_SAWTOOTH, 1000, 217999U, 0U, 218998U},
+  {"quick", DATASET_SAWTOOTH, 1000, 16431U, 8759U, 26402U},
+  {"merge", DATASET_SAWTOOTH, 1000, 6532U, 0U, 19952U},
+  {"heap", DATASET_SAWTOOTH, 1000, 16546U, 8803U, 26409U},
+  {"insertion", DATASET_ZIPF, 1000, 180094U, 0U, 181094U},
+  {"quick", DATASET_ZIPF, 1000, 4710U, 2066U, 6231U},
+  {"merge", DATASET_ZIPF, 1000, 8653U, 0U, 19952U},
+  {"heap", DATASET_ZIPF, 1000, 10211U, 4942U, 14826U},
+  {"insertion", DATASET_WIDE_RANGE, 1000, 251389U, 0U, 252399U},
+  {"quick", DATASET_WIDE_RANGE, 1000, 16551U, 9195U, 28161U},
+  {"merge", DATASET_WIDE_RANGE, 1000, 8685U, 0U, 19952U},
+  {"heap", DATASET_WIDE_RANGE, 1000, 16839U, 9083U, 27249U},
 };
 
 static const SortAlgorithm *find_sort_algorithm(const char *name) {
@@ -390,6 +439,11 @@ int main(void) {
 
   if (!test_dataset_parse()) {
     fprintf(stderr, "Failure: dataset parsing.\n");
+    failures++;
+  }
+
+  if (!test_dataset_export()) {
+    fprintf(stderr, "Failure: dataset export.\n");
     failures++;
   }
 

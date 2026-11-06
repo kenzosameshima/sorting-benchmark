@@ -13,6 +13,7 @@ typedef struct {
   DatasetType dataset_type;
   const int *sizes;
   int size_count;
+  const char *dump_dir;  // if set, export the first repetition's dataset here
 } BenchmarkConfig;
 
 void run_experiments(const BenchmarkConfig *config);

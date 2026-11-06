@@ -71,6 +71,33 @@ int open_result_files(ResultFiles *files, const char *directory) {
   return 1;
 }
 
+int write_dataset_csv(const char *directory, const char *dataset, int n, const Image images[]) {
+  char path[256];
+  FILE *file;
+
+  if (!ensure_output_directory(directory)) {
+    return 0;
+  }
+
+  if (snprintf(path, sizeof(path), "%s/%s_%d.csv", directory, dataset, n) < 0) {
+    return 0;
+  }
+
+  file = fopen(path, "w");
+  if (!file) {
+    fprintf(stderr, "Failed to open dataset file: %s\n", path);
+    return 0;
+  }
+
+  fputs("id,size\n", file);
+  for (int i = 0; i < n; i++) {
+    fprintf(file, "%d,%d\n", images[i].id, images[i].size);
+  }
+
+  fclose(file);
+  return 1;
+}
+
 void close_result_files(ResultFiles *files) {
   if (files->runs) {
     fclose(files->runs);

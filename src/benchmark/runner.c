@@ -131,6 +131,10 @@ static int run_size(const BenchmarkConfig *config,
   for (int rep = 0; rep < repetitions; rep++) {
     generate_images(base_dataset, n, rng, dataset_type);
 
+    if (rep == 0 && config->dump_dir) {
+      write_dataset_csv(config->dump_dir, dataset_name, n, base_dataset);
+    }
+
     for (int a = 0; a < algorithm_count; a++) {
       Metrics metrics;
       double start;
@@ -220,7 +224,10 @@ void run_experiments(const BenchmarkConfig *config) {
     DATASET_REVERSED,
     DATASET_NEARLY_SORTED,
     DATASET_FEW_UNIQUE,
-    DATASET_ORGAN_PIPE
+    DATASET_ORGAN_PIPE,
+    DATASET_SAWTOOTH,
+    DATASET_ZIPF,
+    DATASET_WIDE_RANGE
   };
   const int *sizes = config->sizes ? config->sizes : default_sizes;
   int size_count = config->sizes ? config->size_count :
@@ -237,7 +244,7 @@ void run_experiments(const BenchmarkConfig *config) {
   Rng rng;
 
   if (algorithm_count_size > (size_t)INT_MAX) {
-    fprintf(stderr, "Quantidade de algoritmos excede limite suportado.\n");
+    fprintf(stderr, "Algorithm count exceeds the supported limit.\n");
     return;
   }
   algorithm_count = (int)algorithm_count_size;
@@ -263,5 +270,5 @@ void run_experiments(const BenchmarkConfig *config) {
   }
 
   close_result_files(&files);
-  printf("Experimentos finalizados. Resultados salvos em results/results.csv e results/summary.csv\n");
+  printf("Experiments finished. Results saved to results/results.csv and results/summary.csv\n");
 }
