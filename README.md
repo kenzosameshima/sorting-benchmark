@@ -12,7 +12,7 @@ reporting and analysis.
   baselines qsort (C), std_sort and std_stable_sort (C++).
 - Multiple input sizes, configurable with `--sizes`.
 - Dataset patterns: random, sorted, reversed, nearly_sorted, few_unique,
-  organ_pipe, or all.
+  organ_pipe, sawtooth, zipf, wide_range, or all.
 - `--mode quick|robust` presets: a fast random-only smoke run, or the full
   dataset x size matrix.
 - Repeated runs per size with median and standard deviation of elapsed time.
@@ -376,6 +376,10 @@ in the registry, and no benchmark/test loop changes.
 
 ## Dataset Generation
 
+`--dump-dataset DIR` exports the first repetition's dataset (the exact input every
+algorithm sorts) to `DIR/<dataset>_<n>.csv` with columns `id,size`, for example
+`benchmark --seed 42 --dataset zipf --sizes 1000 --dump-dataset datasets`.
+
 Dataset generation is centralized in `src/data/generator.c`.
 
 - `random`: random sizes in the `0..9999` range, shuffled by id
@@ -384,6 +388,11 @@ Dataset generation is centralized in `src/data/generator.c`.
 - `nearly_sorted`: ascending data with about 1% random swaps
 - `few_unique`: random values in a small `0..9` range, then shuffled
 - `organ_pipe`: ascending then descending (ramps up to the midpoint, then back down)
+- `sawtooth`: 8 ascending runs back to back (`i % (n / 8)`)
+- `zipf`: skewed duplicates, `1000 / rank` for a random rank in `1..1000`, so small
+  values repeat a lot and large ones are rare
+- `wide_range`: keys over the full 32-bit range, negatives included, unlike the narrow
+  `0..9999` of `random`; exercises every radix pass
 - `all`: benchmark convenience mode that runs every concrete dataset type
 
 Validation uses sorted-order checks plus O(n) id-permutation validation, so the
