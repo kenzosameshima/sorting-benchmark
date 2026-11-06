@@ -32,7 +32,7 @@ ALGORITHM_ORDER = ["bubble", "selection", "insertion", "quick", "quick_naive", "
 # Library baselines: their counters depend on the platform libc/libstdc++, so they are
 # excluded from the cross-platform counter-equality check (timings are still compared).
 LIBRARY_BASELINES = {"qsort", "std_sort", "std_stable_sort"}
-DATASET_ORDER = ["random", "sorted", "reversed", "nearly_sorted", "few_unique", "organ_pipe"]
+DATASET_ORDER = ["random", "sorted", "reversed", "nearly_sorted", "few_unique", "organ_pipe", "sawtooth", "zipf", "wide_range"]
 BOOTSTRAP_ROUNDS = 1000
 CV_WARN = 0.10  # coefficient of variation above which a cell is flagged noisy
 FIRST_REP_WARN = 1.30  # rep1 / median(rest) above which warm-up bias is flagged

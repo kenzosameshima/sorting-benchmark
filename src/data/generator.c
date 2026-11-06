@@ -63,6 +63,12 @@ const char *dataset_type_name(DatasetType type) {
       return "few_unique";
     case DATASET_ORGAN_PIPE:
       return "organ_pipe";
+    case DATASET_SAWTOOTH:
+      return "sawtooth";
+    case DATASET_ZIPF:
+      return "zipf";
+    case DATASET_WIDE_RANGE:
+      return "wide_range";
     case DATASET_ALL:
       return "all";
     default:
@@ -87,6 +93,12 @@ int parse_dataset_type(const char *name, DatasetType *type) {
     *type = DATASET_FEW_UNIQUE;
   } else if (strcmp(name, "organ_pipe") == 0) {
     *type = DATASET_ORGAN_PIPE;
+  } else if (strcmp(name, "sawtooth") == 0) {
+    *type = DATASET_SAWTOOTH;
+  } else if (strcmp(name, "zipf") == 0) {
+    *type = DATASET_ZIPF;
+  } else if (strcmp(name, "wide_range") == 0) {
+    *type = DATASET_WIDE_RANGE;
   } else if (strcmp(name, "all") == 0) {
     *type = DATASET_ALL;
   } else {
@@ -156,6 +168,41 @@ static void generate_organ_pipe_images(Image images[], int n) {
   }
 }
 
+#define SAWTOOTH_TEETH 8
+#define ZIPF_RANGE 1000
+
+/* Several ascending runs back to back. */
+static void generate_sawtooth_images(Image images[], int n) {
+  int period = n / SAWTOOTH_TEETH;
+
+  if (period < 1) {
+    period = 1;
+  }
+
+  initialize_ids(images, n);
+  for (int i = 0; i < n; i++) {
+    images[i].size = i % period;
+  }
+}
+
+/* Heavily skewed duplicates: size = ZIPF_RANGE / rank gives a 1/x tail, so
+ * small values repeat a lot while large ones are rare. */
+static void generate_zipf_images(Image images[], int n, Rng *rng) {
+  initialize_ids(images, n);
+  for (int i = 0; i < n; i++) {
+    images[i].size = ZIPF_RANGE / (1 + rng_range(rng, 0, ZIPF_RANGE - 1));
+  }
+}
+
+/* Keys spread over the whole 32-bit range, negatives included, unlike the
+ * narrow 0..9999 range of `random`. Exercises every radix pass. */
+static void generate_wide_range_images(Image images[], int n, Rng *rng) {
+  initialize_ids(images, n);
+  for (int i = 0; i < n; i++) {
+    images[i].size = (int)rng_next(rng);
+  }
+}
+
 void generate_images(Image images[], int n, Rng *rng, DatasetType type) {
   if (n <= 0) {
     return;
@@ -179,6 +226,15 @@ void generate_images(Image images[], int n, Rng *rng, DatasetType type) {
       break;
     case DATASET_ORGAN_PIPE:
       generate_organ_pipe_images(images, n);
+      break;
+    case DATASET_SAWTOOTH:
+      generate_sawtooth_images(images, n);
+      break;
+    case DATASET_ZIPF:
+      generate_zipf_images(images, n, rng);
+      break;
+    case DATASET_WIDE_RANGE:
+      generate_wide_range_images(images, n, rng);
       break;
     case DATASET_ALL:
       generate_random_images(images, n, rng);
