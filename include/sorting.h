@@ -20,5 +20,7 @@ void heap_sort(Image arr[], int n, Metrics *metrics);
 void radix_sort(Image arr[], int n, Image temp[], Metrics *metrics);
 void shell_sort(Image arr[], int n, Metrics *metrics);
 void qsort_libc(Image arr[], int n, Metrics *metrics);
+void std_sort(Image arr[], int n, Metrics *metrics);
+void std_stable_sort(Image arr[], int n, Metrics *metrics);
 
 #endif
